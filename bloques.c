@@ -15,7 +15,7 @@ static int descriptor = 0;
 int bmount(const char* camino) {
     descriptor = open(camino, O_RDWR | O_CREAT, 0666);
     if (descriptor == FALLO){
-        perror("Error al abrir el archivo");
+        perror("Error al abrir el archivo\n");
         return FALLO;
     } else {
         return descriptor;
@@ -29,7 +29,7 @@ int bmount(const char* camino) {
 int bumount() {
     int exitFile = close(descriptor);
     if (exitFile == FALLO){
-        perror("Error al cerrar el fichero");
+        perror("Error al cerrar el fichero\n");
         return FALLO;
     } else {
         return EXITO;
@@ -43,13 +43,13 @@ int bumount() {
 int bwrite(unsigned int nbloque, const void *buf){
     off_t desplazamiento = nbloque * BLOCKSIZE;
     if(lseek(descriptor, desplazamiento, SEEK_SET) == FALLO){
-        perror("Error al realizar seek para escritura");
+        perror("Error al realizar seek para escritura\n");
         return FALLO;
     }
 
     ssize_t bytesEscritos =  write(descriptor, buf, BLOCKSIZE);
     if (bytesEscritos == FALLO){
-        perror("Error en escritura");
+        perror("Error en escritura\n");
         return FALLO;
     } else {
         return bytesEscritos;
@@ -63,13 +63,13 @@ int bwrite(unsigned int nbloque, const void *buf){
 int bread(unsigned int nbloque, void *buf){
     off_t desplazamiento = nbloque * BLOCKSIZE;
     if(lseek(descriptor, desplazamiento, SEEK_SET) == FALLO){
-        perror("Error al realizar seek para lectura");
+        perror("Error al realizar seek para lectura\n");
         return FALLO;
     }
 
     ssize_t bytesLeidos =  read(descriptor, buf, BLOCKSIZE);
     if (bytesLeidos == FALLO){
-        perror("Error en lectura");
+        perror("Error en lectura\n");
         return FALLO;
     } else {
         return bytesLeidos;

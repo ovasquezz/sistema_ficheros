@@ -1,5 +1,4 @@
-#include "bloques.h"
-// INCLUDE BLOQUES.H
+#include "ficheros_basico.h"
 
 int main(int argc, char **argv)
 {
@@ -22,6 +21,12 @@ int main(int argc, char **argv)
     {
         bwrite(i, libre);
     }
+
+    initSB();
+    initMB();
+    initAI();
+
+
     bumount(argv[1]);
     return 0;
 }
