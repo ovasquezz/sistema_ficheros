@@ -241,8 +241,6 @@ int leer_inodo(unsigned int ninodo, struct inodo *inodo){
     } else {
         return FALLO;
     }
-    // pone que hay que devolver 0 si va bien pero pa eso basta el read no???
-	// struct inodo inodo_leido = inodos[ninodo % (BLOCKSIZE/INODOSIZE)];
 }
 
 int reservar_inodo(unsigned char tipo, unsigned char permisos){
