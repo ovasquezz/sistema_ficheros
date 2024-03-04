@@ -102,3 +102,173 @@ int initAI() {
     }
     return bwrite(posSB, &SB);
 }
+
+int escribir_bit(unsigned int nbloque, unsigned int bit) {
+    struct superbloque SB;
+    bread(posSB, &SB);
+    unsigned int posbyte = nbloque / 8;
+    unsigned int posbit = nbloque % 8;
+    unsigned int numbloqueMB = posbyte / BLOCKSIZE;
+    unsigned int nbloqueabs = SB.posPrimerBloqueMB + numbloqueMB;
+    unsigned char bufferMB[BLOCKSIZE];
+    if (bread(nbloqueabs, bufferMB) < 0) {
+        fprintf(stderr, "Error en la lectura del bloque de escribit_bit\n");
+        return FALLO;
+    }
+    posbyte = posbyte % BLOCKSIZE;
+    unsigned char mask = 128;
+    mask >>= posbit;
+    if (bit == 1) {
+        bufferMB[posbyte] |= mask;
+    } else {
+        bufferMB[posbyte] &= ~mask;
+    }
+    if (bwrite(nbloqueabs, bufferMB) < 0) {
+        fprintf(stderr, "Error en la escritura del bit en el bloque\n");
+        return FALLO;
+    }
+    return 0;
+}
+
+char leer_bit(unsigned int nbloque) {
+    struct superbloque SB;
+    if (bread(posSB, &SB) < 0) {
+        fprintf(stderr, "Error en la lectura del superbloque al leer_bit\n");
+        return FALLO;
+    }
+    unsigned int posbyte = nbloque / 8;
+    unsigned int posbit = nbloque % 8;
+    unsigned int numbloqueMB = posbyte / BLOCKSIZE;
+    unsigned int nbloqueabs = SB.posPrimerBloqueMB + numbloqueMB;
+    unsigned char bufferMB[BLOCKSIZE];
+    if (bread(nbloqueabs, bufferMB) < 0) {
+        fprintf(stderr, "Error al leer el bloque en leer_bit()\n");
+        return FALLO;
+    }
+    posbyte = posbyte % BLOCKSIZE;
+    unsigned char mask = 128;
+    mask >>= posbit;
+    mask &= bufferMB[posbyte];
+    mask >>= (7 - posbit);
+#if DEBUGN1
+    fprintf(stderr, GRIS_T "[leer_bit(%i)]→posbyte:%i,posbit=%i;numbloqueMB:%i,nbloqueabs:%i\n", nbloque, posbyte, posbit, numbloqueMB, nbloqueabs);
+    fprintf(stderr, RESET);
+#endif
+    return mask;
+}
+
+int reservar_bloque() {
+    struct superbloque SB;
+    if (bread(posSB, &SB) < 0) {
+        fprintf(stderr, "Error en la lectura del SB en reservar_bloque\n");
+        return FALLO;
+    };
+    if (SB.cantBloquesLibres > 0) {
+        unsigned char bufferMB[BLOCKSIZE], bufferaux[BLOCKSIZE];
+        memset(bufferaux, 255, BLOCKSIZE);
+        memset(bufferMB, 0, BLOCKSIZE);
+        int numbloqueMB = SB.posPrimerBloqueMB;
+        bread(numbloqueMB, bufferMB);
+        for (; numbloqueMB <= SB.posUltimoBloqueMB && memcmp(bufferMB, bufferaux, BLOCKSIZE) == 0;) {
+            numbloqueMB++;
+            bread(numbloqueMB, bufferMB);
+        }
+        int posbyte = 0;
+        while (bufferMB[posbyte] == 255) {
+            posbyte++;
+        }
+        unsigned char mask = 128;
+        int posbit = 0;
+        while (bufferMB[posbyte] & mask) {
+            bufferMB[posbyte] <<= 1;
+            posbit++;
+        }
+        int nbloque = ((numbloqueMB - SB.posPrimerBloqueMB) * BLOCKSIZE + posbyte) * 8 + posbit;
+        escribir_bit(nbloque, 1);
+        SB.cantBloquesLibres = SB.cantBloquesLibres - 1;
+
+        memset(bufferaux, 0, BLOCKSIZE);
+        if (bwrite(SB.posPrimerBloqueDatos + nbloque - 1, bufferaux) < 0) {
+            fprintf(stderr, "Error al escrbir el bloque de reserva en reservar_bloque\n");
+            return FALLO;
+        }
+        if (bwrite(posSB, &SB) < 0) {
+            fprintf(stderr, "Error en la escritura del SB en reservar bloque\n");
+            return FALLO;
+        }
+        return nbloque;
+    }
+    return FALLO;
+}
+
+int liberar_bloque(unsigned int nbloque) {
+    escribir_bit(nbloque, 0);
+    struct superbloque SB;
+    if (bread(posSB, &SB) < 0) {
+        fprintf(stderr, "Error en la lectura del SB en liberar_bloque\n");
+        return FALLO;
+    }
+    unsigned char vacio[BLOCKSIZE];
+    memset(vacio, 0, BLOCKSIZE);
+    bwrite(nbloque, vacio);
+    SB.cantBloquesLibres = SB.cantBloquesLibres + 1;
+    if (bwrite(posSB, &SB) < 0) {
+        fprintf(stderr, "Error en la escritura del SB en liberar_bloque\n");
+    }
+    return nbloque;
+}
+
+int escribir_inodo(unsigned int ninodo, struct inodo *inodo){
+    struct superbloque SB;
+	bread(posSB, &SB);
+	int nbloqueAI = (ninodo*INODOSIZE)/BLOCKSIZE;
+    int nbloqueabs = nbloqueAI + SB.posPrimerBloqueAI;
+	struct inodo inodos[BLOCKSIZE/INODOSIZE];
+	bread(nbloqueabs, inodos);
+	inodos[ninodo % (BLOCKSIZE/INODOSIZE)] = *inodo;
+	return bwrite(nbloqueabs, inodos);
+}
+
+int leer_inodo(unsigned int ninodo, struct inodo *inodo){
+    struct superbloque SB;
+	bread(posSB, &SB);
+	int nbloqueAI = (ninodo*INODOSIZE)/BLOCKSIZE;
+    int nbloqueabs = nbloqueAI + SB.posPrimerBloqueAI;
+	struct inodo inodos[BLOCKSIZE/INODOSIZE];
+	if(bread(nbloqueabs, &inodos)){
+        *inodo = inodos[ninodo % (BLOCKSIZE/INODOSIZE)];
+        return EXITO;
+    } else {
+        return FALLO;
+    }
+    // pone que hay que devolver 0 si va bien pero pa eso basta el read no???
+	// struct inodo inodo_leido = inodos[ninodo % (BLOCKSIZE/INODOSIZE)];
+}
+
+int reservar_inodo(unsigned char tipo, unsigned char permisos){
+    struct superbloque SB;
+    struct inodo inodo;
+	bread(posSB, &SB);
+	int posInodoReservado = SB.posPrimerInodoLibre;
+	if(leer_inodo(posInodoReservado, &inodo)){
+        perror("resrvar_inodo: Error al leer inodo\n");
+        return FALLO
+    }
+	unsigned int siguientelibre = inodo.punterosDirectos[0];
+	inodo.tipo = tipo;
+	inodo.permisos = permisos;
+	inodo.nlinks = 1;
+	inodo.tamEnBytesLog = 0;
+	inodo.atime = time(NULL);
+	inodo.mtime = time(NULL);
+	inodo.ctime = time(NULL);
+	inodo.numBloquesOcupados = 0;
+	memset(inodo.punterosDirectos, 0, sizeof(inodo.punterosDirectos));
+	memset(inodo.punterosIndirectos, 0, sizeof(inodo.punterosIndirectos));
+	escribir_inodo(&inodo, SB.posPrimerInodoLibre); // Escribimos el inodo reservado
+	// Actualizar la lista enlazada de inodos libres
+	SB.cantInodosLibres--;
+	SB.posPrimerInodoLibre = siguientelibre;
+	bwrite(posSB, &SB);
+	return posInodoReservado;
+}

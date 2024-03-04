@@ -26,6 +26,7 @@ int main(int argc, char **argv)
     initMB();
     initAI();
 
+    reservar_inodo ('d', 7);
 
     bumount(argv[1]);
     return 0;
