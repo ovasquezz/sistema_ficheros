@@ -270,3 +270,107 @@ int reservar_inodo(unsigned char tipo, unsigned char permisos){
 	bwrite(posSB, &SB);
 	return posInodoReservado;
 }
+int obtener_nRangoBL(*inodo struct inodo, unsigned int nblogico,  unsigned int *prt){
+    if(nblogico<DIRECTOS){
+        *ptr = inodo->punterosDirectos[nblogico];
+        return 0; //<12
+    }
+    if(nblogico<INDIRECTOS0){
+        *ptr = inodo->punterosIndirectos[0]
+        return 1; //268
+    }
+    if(nblogico<INDIRECTOS1){
+        *ptr = inodo->punterosIndirectos[1];
+        return 2; //65804
+    }
+    if(nblogico<INDIRECTOS2){
+        *ptr = inodo->punterosIndirectos[2;
+        return 3;] // 16843020
+    }
+    if(nblogico>=INDIRECTOS2){
+        *ptr:=0;
+        perror("Bloque logico fuera de rango")
+        return -1;
+    }
+}
+int obtener_indice( unsigned int nblogico, int nivel_punteros) {
+    if(nblogico<DIRECTOS){ //ej. nblogico=8
+        return nblogico;
+    }
+    if(nblogico<INDIRECTOS0){ //ej. nblogico=204
+        return nblogico-DIRECTOS;
+    }
+    if(nblogico<INDIRECTOS1){ // ej. nblogico=30004
+        if(nivel_punteros=2){
+            return(nblogico-INDIRECTOS0)/NPUNTEROS;
+        }
+        if(nivel_punteros=1){
+            return(nblogico-INDIRECTOS0)%NPUNTEROS
+        }
+    }
+    if(nblogico>INDIRECTOS2){ // ej nblogico=400004
+        if(nivel_punteros=3){
+            return (nblogico-INDIRECTOS1)/(NPUNTEROS*NPUNTEROS);
+        }
+        if(nivel_punteros=2){
+            return (nblogico-INDIRECTOS1)%(NPUNTEROS*NPUNTEROS)/NPUNTEROS;
+        }
+        if(nivel_punteros=1){
+            return(nblogico-INDIRECTOS1)%(NPUNTEROS*NPUNTEROS)%NPUNTEROS;
+        }
+    }
+}
+int traducir_bloque_inodo(struct inodo *inodo, unsigned int nblogico, unsigned char reservar){
+    //VAR
+    unsigned int ptr, ptr_ant;
+    int nRangoBL,nivel_punteros,indice;
+    unsigned int buffer[NPUNTEROS];
+    ptr=0,ptr_ant=0;
+    nRangoBL= obtener_nRangoBL(inodo,nblogico,&ptr); //0:D,1:I0,2:I1,3:I2
+    nivel_punteros= nRangoBL; // el nivel_punteros mas alto es el que cuelga directamnete del inodo
+    while(nivel_punteros>0){ // iterar para cada nivel de puneteros indirectos
+        if(ptr==0){ //no cuelgan bloques de punteros
+            if(reservar==0){ //bloque inexistente
+                return -1;
+            }
+           else{ // reservar bloques de punteros y crear enlaces desde le inodo hasta el bloque de datos
+            ptr:=reservar_bloque(); //de punteros
+            inodo.numBloquesOcupados++;
+            inodo.ctime=time(NULL); //fecha actual
+            if(nivel_punteros==nRangoBL) { // el bloque cuelga directamente del inodo
+                inodo.punterosIndirectos[nRangoBL-1]=ptr;
+            }
+            else{ //el bloque cuelga de otro bloque de punteros
+                buffer[indice]=ptr;
+                bwrite(ptr_ant,buffer); //salvamos en el dispositivo el biffer de punteros modificado
+            }
+            memset(buffer,0,BLOCKSIZE); //ponemos a 0 todos los punteros del buffer
+           }
+        }else{
+            bread(ptr,buffer); //leemos del dispositivo el bloque de punteros ya existente
+        } 
+        indice=obtener_indice(nblogico,nivel_punteros);
+        ptr_ant=ptr; //guardamos el puntero actual
+        ptr=buffer[indice]; //y lo desplazamos al siguiente nivel
+        nivel_punteros--;
+    }// al salir de este bucle ya estamos al nivel de datos
+    if(ptr==0){ // no existe bloque de datos
+        if(reservar=0){ // error de lectura bloque inexistente
+            return -1;
+        }
+        else{
+            ptr=reservar_bloque(); // de datos
+            inodo.numBloquesOcupados++;
+            inodo.ctime=time(NULL);
+            if(nRangoBL=0){ // si era un puntero directo
+                inodo.punterosDirectos[nblogico]=ptr; // asignamos la dirección del bloque de datos en el inodo
+            }
+            else{
+                buffer[indice]=ptr; // assignamos la direccion del bloque de datos en el buffer
+                bwrite(ptr_ant,buffer) // salvamos en el dispositivo el buffer de punteros modificado
+            }
+
+        }
+    } //mi_write_f() se encargará de salvar los cambios del inodo en el disco
+    return prt; // numero de bloque fisico correspondiente al bloque de datos logico, nblogico
+}

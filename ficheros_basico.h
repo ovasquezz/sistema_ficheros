@@ -4,6 +4,11 @@
 
 #define posSB 0 // el superbloque se escribe en el primer bloque de nuestro FS
 #define tamSB 1
+#define NPUNTEROS (BLOCKSIZE/sizeof(unsigned int)) //256
+#define DIRECTOS 12
+#define INDIRECTOS0 (NPUNTEROS+DIRECTOS)  //268
+#define INDIRECTOS1 (NPUNTEROS*NPUNTEROS+DIRECTOS) //65804
+#define INDIRECTOS2 (NPUNTEROS*NPUNTEROS*NPUNTEROS+DIRECTOS) //16843020
 
 struct superbloque {
    unsigned int posPrimerBloqueMB;          // Posición absoluta del primer bloque del mapa de bits
