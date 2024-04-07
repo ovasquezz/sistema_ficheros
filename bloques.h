@@ -1,5 +1,9 @@
 // bloques.h
-
+/**
+ * @author Bernat Parera
+ * @author Rafael Crespí
+ * @author Otto Vásquez
+*/
 
 #include <stdio.h>  //printf(), fprintf(), stderr, stdout, stdin
 #include <fcntl.h> //O_WRONLY, O_CREAT, O_TRUNC

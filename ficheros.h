@@ -1,3 +1,9 @@
+/**
+ * @author Bernat Parera
+ * @author Rafael Crespí
+ * @author Otto Vásquez
+*/
+
 #include "bloques.h"
 #include "ficheros_basico.h"
 struct STAT {

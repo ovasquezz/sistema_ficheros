@@ -1,3 +1,9 @@
+/**
+ * @author Bernat Parera
+ * @author Rafael Crespí
+ * @author Otto Vásquez
+*/
+
 #include "bloques.h"
 #include <time.h>
 #include <limits.h>
@@ -80,7 +86,7 @@ int escribir_inodo(unsigned int ninodo, struct inodo* inodo);
 int leer_inodo(unsigned int ninodo, struct inodo* inodo);
 int reservar_inodo(unsigned char tipo, unsigned char permisos);
 
-int traducir_bloque_inodo(struct inodo* inodo, unsigned int nblogico, unsigned char reservar);
+int traducir_bloque_inodo(unsigned int ninodo, struct inodo* inodo, unsigned int nblogico, unsigned char reservar);
 
 int liberar_inodo(unsigned int ninodo);
 int liberar_bloques_inodo(unsigned int primerBL, struct inodo* inodo);
