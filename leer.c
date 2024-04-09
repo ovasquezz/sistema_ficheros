@@ -21,14 +21,16 @@ int main(int argc, char** argv) {
     unsigned char buffer[tambuffer];
     memset(buffer, 0, tambuffer);
     int leidos = 0;
+    int leidosTotal = 0;
     leidos = mi_read_f(ninodo, buffer, offset, tambuffer);
     while (leidos > 0) {
+        leidosTotal += leidos;
         write(1, buffer, leidos);
         offset += tambuffer;
         memset(buffer, 0, tambuffer);
         leidos = mi_read_f(ninodo, buffer, offset, tambuffer);
     }
-    fprintf(stderr, "BYTES LEIDOS: %d\n", leidos);
+    fprintf(stderr, "BYTES LEIDOS: %d\n", leidosTotal);
     mi_stat_f(ninodo, &stat);
     fprintf(stderr, "TAMAÑO DE BYTES LEIDOS: %d\n", stat.tamEnBytesLog);
 

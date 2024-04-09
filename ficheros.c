@@ -91,6 +91,11 @@ int mi_read_f(unsigned int ninodo, void* buf_original, unsigned int offset, unsi
     struct inodo inodo;
     unsigned char buf_bloque[BLOCKSIZE];
     int leidos, bl_fisico;
+
+    if (leer_inodo(ninodo, &inodo) == -1){
+        perror("Error leer_inodo en mi_read_f");
+        return FALLO;
+    }
     if ((inodo.permisos & 4) != 4) {
         fprintf(stderr, RED "No hay permisos de lectura\n" RESET);
         return FALLO;

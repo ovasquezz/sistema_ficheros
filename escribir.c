@@ -6,6 +6,10 @@
 */
 //funcion para escribir texto en inodos haciendo uso de reservar_inodo(f,6) para obtener ninodo imprimirlo por pantalla y usarlo en mi_write_f()
 int main(int argc, char** argv) {
+    if(argc != 4){
+		printf("Sintaxis: escribir <nombre_dispositivo> <\"$(cat fichero)\"> <diferentes_inodos>\n");
+		return -1;
+	}
     void* nombre_fichero = argv[1];
     char* string = argv[2];
     int reserva_inodo = atoi(argv[3]); //offset
@@ -26,7 +30,6 @@ int main(int argc, char** argv) {
     printf("Tamaño en bytes lógicos: %d\n", stat.tamEnBytesLog);
     printf("N. de bloques ocupados: %d\n\n", stat.numBloquesOcupados);
 
-    write(1, string, strlen(string));
     for (int i = 1; i < 5; ++i) {
         if (reserva_inodo != 0) {
             n_inodo = reservar_inodo('f', 6);
@@ -35,19 +38,8 @@ int main(int argc, char** argv) {
         memset(buffer, 0, longitud);
         mi_stat_f(n_inodo, &stat);
         printf("\nNº inodo reservado: %d\noffset: %d\nBytes escritos: %d\n", n_inodo, OFFSETS[i], bEscritos);
-        /*
-        printf("DATOS INODO: %d\n", nInodo);
-        printf("Tipo: %c\n", stat.tipo);
-        permisos = (int) stat.permisos;
-        printf("Permisos: %d\n", permisos);
-        printf("atime: %s\n", atime);
-        printf("mtime: %s\n", mtime);
-        printf("ctime: %s\n", ctime);
-        printf("N. links: %d\n", stat.nlinks);
-        */
         printf("Tamaño en bytes lógicos: %d\n", stat.tamEnBytesLog);
         printf("N. de bloques ocupados: %d\n\n", stat.numBloquesOcupados);
-        write(1, string, strlen(string));
     }
 
     if (bumount() == -1) {

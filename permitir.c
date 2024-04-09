@@ -20,6 +20,7 @@ int main(int argc, char **argv){
         // llamamos a mi_chmod_f
         unsigned int ninodo=atoi(argv[2]);
         unsigned int permisos=atoi(argv[3]);
+
         if(mi_chmod_f(ninodo,permisos) == -1){
             perror("Error en el chmod");
             return FALLO;
