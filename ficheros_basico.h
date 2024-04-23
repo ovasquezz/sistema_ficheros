@@ -11,10 +11,12 @@
 #define posSB 0 // el superbloque se escribe en el primer bloque de nuestro FS
 #define tamSB 1
 #define NPUNTEROS (BLOCKSIZE/sizeof(unsigned int)) //256
+#define NPUNTEROS2 (NPUNTEROS * NPUNTEROS)           // 65.536
+#define NPUNTEROS3 (NPUNTEROS * NPUNTEROS * NPUNTEROS) // 16.777.216
 #define DIRECTOS 12
 #define INDIRECTOS0 (NPUNTEROS+DIRECTOS)  //268
-#define INDIRECTOS1 (NPUNTEROS*NPUNTEROS+DIRECTOS) //65804
-#define INDIRECTOS2 (NPUNTEROS*NPUNTEROS*NPUNTEROS+DIRECTOS) //16843020
+#define INDIRECTOS1 (INDIRECTOS0 + NPUNTEROS2) // 65.804
+#define INDIRECTOS2 (INDIRECTOS1 + NPUNTEROS3) // 16.843.020
 
 struct superbloque {
    unsigned int posPrimerBloqueMB;          // Posición absoluta del primer bloque del mapa de bits
@@ -90,3 +92,6 @@ int traducir_bloque_inodo(unsigned int ninodo, struct inodo* inodo, unsigned int
 
 int liberar_inodo(unsigned int ninodo);
 int liberar_bloques_inodo(unsigned int primerBL, struct inodo* inodo);
+int liberar_directos(unsigned int* nBL, unsigned int ultimoBL, struct inodo* inodo, int* eof);
+int liberar_indirectos_recursivo(unsigned int* nBL, unsigned int primerBL, unsigned int ultimoBL, struct inodo* inodo, int nRangoBL, unsigned int nivel_punteros,
+   unsigned int* ptr, int* eof, unsigned int* nBLAux, unsigned int* nBreads, unsigned int* nBwrites);

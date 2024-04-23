@@ -22,11 +22,12 @@ int main(int argc, char** argv) {
         return FALLO;
     }
     int n_inodo = reservar_inodo('f', 6);
+    printf("Nº inodo reservado: %d\noffset: %d\n", n_inodo, OFFSETS[0]);
     int n_escritos = mi_write_f(n_inodo, buffer, OFFSETS[0], longitud);
     memset(buffer, 0, longitud);
     mi_stat_f(n_inodo, &stat);
 
-    printf("Nº inodo reservado: %d\noffset: %d\nBytes escritos: %d\n", n_inodo, OFFSETS[0], n_escritos);
+    printf("Bytes escritos: %d\n", n_escritos);
     printf("Tamaño en bytes lógicos: %d\n", stat.tamEnBytesLog);
     printf("N. de bloques ocupados: %d\n\n", stat.numBloquesOcupados);
 
@@ -34,10 +35,11 @@ int main(int argc, char** argv) {
         if (reserva_inodo != 0) {
             n_inodo = reservar_inodo('f', 6);
         }
+        printf("Nº inodo reservado: %d\noffset: %d\n", n_inodo, OFFSETS[i]);
         int bEscritos = mi_write_f(n_inodo, string, OFFSETS[i], longitud);
         memset(buffer, 0, longitud);
         mi_stat_f(n_inodo, &stat);
-        printf("\nNº inodo reservado: %d\noffset: %d\nBytes escritos: %d\n", n_inodo, OFFSETS[i], bEscritos);
+        printf("Bytes escritos: %d\n", bEscritos);
         printf("Tamaño en bytes lógicos: %d\n", stat.tamEnBytesLog);
         printf("N. de bloques ocupados: %d\n\n", stat.numBloquesOcupados);
     }

@@ -14,7 +14,7 @@ int main(int argc, char** argv) {
         perror("Error en bmount() en leer.c");
         return FALLO;
     }
-    int tambuffer = 1024;
+    int tambuffer = 1500;
     int ninodo = atoi(argv[2]);
     int offset = 0;
     struct STAT stat;

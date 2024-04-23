@@ -136,7 +136,7 @@ int mi_read_f(unsigned int ninodo, void* buf_original, unsigned int offset, unsi
         //segunda fase
         for (int i = primerBL + 1;i < ultimoBL;i++) {
             bl_fisico = traducir_bloque_inodo(ninodo, &inodo, i, 0);
-            if (bl_fisico == -1) {
+            if (bl_fisico != -1) {
                 if (bread(bl_fisico, buf_bloque) == -1) {
                     return FALLO;
                 }
@@ -146,11 +146,11 @@ int mi_read_f(unsigned int ninodo, void* buf_original, unsigned int offset, unsi
         }
         //tercera fase
         bl_fisico = traducir_bloque_inodo(ninodo, &inodo, ultimoBL, reservar);
-        if (bl_fisico == -1) {
+        if (bl_fisico != -1) {
             if (bread(bl_fisico, buf_bloque) == -1) {
                 return FALLO;
             }
-            memcpy(buf_original + (BLOCKSIZE - desp1) + (ultimoBL - primerBL - 1) * BLOCKSIZE, buf_bloque, BLOCKSIZE);
+            memcpy(buf_original + (nbytes - desp2 - 1), buf_bloque, desp2 + 1);
         }
         leidos = leidos + desp2 + 1;
     }
@@ -216,7 +216,7 @@ int mi_truncar_f(unsigned int ninodo, unsigned int nbytes) {
     if (nbytes % BLOCKSIZE == 0) {
         primerBL = nbytes / BLOCKSIZE;
     } else {
-        primerBL = nbytes / (BLOCKSIZE + 1);
+        primerBL = nbytes / BLOCKSIZE + 1;
     }
     liberados = liberar_bloques_inodo(primerBL, &inodo);
     inodo.mtime = time(NULL);
