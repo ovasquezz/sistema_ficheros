@@ -299,8 +299,7 @@ int reservar_inodo(unsigned char tipo, unsigned char permisos) {
     inodo.ctime = time(NULL);
     inodo.numBloquesOcupados = 0;
     SB.posPrimerInodoLibre = inodo.punterosDirectos[0];
-    //memset(inodo.punterosDirectos, 0, sizeof(inodo.punterosDirectos));
-    //memset(inodo.punterosIndirectos, 0, sizeof(inodo.punterosIndirectos));
+
     for (int i = 0; i < DIRECTOS; i++)
         inodo.punterosDirectos[i] = 0;
     for (int i = 0; i < 3; i++)
