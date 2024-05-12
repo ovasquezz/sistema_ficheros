@@ -1,7 +1,18 @@
 #include "directorios.h"
+/**
+ * @author Bernat Parera
+ * @author Rafael Crespí
+ * @author Otto Vásquez
+*/
+
 int main(int argc, char** argv) {
     if (argc != 3) {
-        fprintf(stderr, "Sintaxis: ./mi_cat <disco> </ruta_fichero> \n");
+        fprintf(stderr, RED "Sintaxis: ./mi_cat <disco> </ruta_fichero> \n" RESET);
+        return FALLO;
+    }
+
+    if(argv[2][strlen(argv[2]) - 1] == '/') {
+        fprintf(stderr, RED "Error: %s es un directorio.\n" RESET, argv[2]);
         return FALLO;
     }
 
@@ -20,10 +31,10 @@ int main(int argc, char** argv) {
     int leidosTotal = 0;
     leidos = mi_read(camino, buffer, offset, tambuffer);
     while (leidos > 0) {
-        leidosTotal += leidos;
         write(1, buffer, leidos);
-        offset += tambuffer;
         memset(buffer, 0, tambuffer);
+        offset += tambuffer;
+        leidosTotal += leidos;
         leidos = mi_read(camino, buffer, offset, tambuffer);
     }
 
@@ -32,7 +43,7 @@ int main(int argc, char** argv) {
         leidosTotal = 0;
     }
 
-    fprintf(stderr, "BYTES LEIDOS: %d\n", leidosTotal);
+    fprintf(stderr, "\nBYTES LEIDOS: %d\n", leidosTotal);
 
     if (bumount() == -1) {
         perror("Error en bumount() en leer.c");

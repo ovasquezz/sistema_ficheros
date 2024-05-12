@@ -1,10 +1,8 @@
 #include "directorios.h"
-
-/*
-Función: int main()
-----------------------------------------
-Muestra la información acerca del
-inodo de un fichero o directorio.
+/**
+ * @author Bernat Parera
+ * @author Rafael Crespí
+ * @author Otto Vásquez
 */
 
 int main(int argc, char** argv) {
@@ -15,13 +13,11 @@ int main(int argc, char** argv) {
     }
 
     bmount(argv[1]);
-    char ruta[strlen(argv[2])];
-    strcpy(ruta, argv[2]);
+    char* ruta;
+    ruta = argv[2];
     struct STAT info;
-    int ninodo = mi_stat(ruta, &info);
 
-    if (ninodo != 0) {
-        printf("Nº de inodo: %d\n", ninodo);
+    if (mi_stat(ruta, &info) != -1) {
         printf("tipo: %c\n", info.tipo);
         printf("permisos: %d\n", info.permisos);
         printf("atime: %s", asctime(gmtime(&info.atime)));

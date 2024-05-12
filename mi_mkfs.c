@@ -5,7 +5,6 @@
  * @author Otto Vásquez
 */
 
-
 int main(int argc, char** argv) {
     ////Comprobamos sintaxis
     if (argc < 3) {

@@ -10,29 +10,29 @@ struct entrada* entrada;
 static struct UltimaEntrada UltimaEntradaEscritura;
 static struct UltimaEntrada UltimaEntradaLectura;
 
-int extraer_camino(const char* camino, char* inicial, char* final, char* tipo) {
-    if (camino[0] != '/') { // Si el camino no comienza con /
-        return FALLO;
+int extraer_camino(const char *camino, char *inicial, char *final, char *tipo) {
+    const char *aux;
+
+    if (camino[0] != '/'){
+        return -1;
     }
 
-    // Localizar la primera / despues de la inicial.
-    char* aux = strchr((camino + 1), '/');
-    strcpy(tipo, "f");
+    camino++;
+    aux = strchr(camino, '/');
 
-    //Si se ha encotrado el caracter '/'
-    if (aux) {
-        strncpy(inicial, (camino + 1), (strlen(camino) - strlen(aux) - 1)); // camino - aux
-        strcpy(final, aux); // aux
+    if (aux != NULL) {
+        strcpy(final, aux);
+        strncpy(inicial, camino, aux - camino);
+        inicial[aux - camino] = 0;
+        *tipo = 'd';
 
-        if (final[0] == '/') { // Si es directorio
-            strcpy(tipo, "d");
-        }
-    } else { //Si no se ha encotrado
-        strcpy(inicial, (camino + 1));
+    } else {
+        strcpy(inicial, camino);
         strcpy(final, "");
+        *tipo = 'f';
     }
 
-    return EXITO;
+    return EXIT_SUCCESS;
 }
 
 int buscar_entrada(const char* camino_parcial, unsigned int* p_inodo_dir, unsigned int* p_inodo, unsigned int* p_entrada, char reservar, unsigned char permisos) {
@@ -81,14 +81,16 @@ int buscar_entrada(const char* camino_parcial, unsigned int* p_inodo_dir, unsign
     // Leemos de entrada en entrada
     if (cant_entradas_inodo > 0) {
         if (mi_read_f(*p_inodo_dir, &entrada, num_entrada_inodo * sizeof(struct entrada), sizeof(struct entrada)) < 0) {
-            return ERROR_PERMISO_LECTURA;
+            perror("Error en mi_read_f en buscar_entrada()");
+            return FALLO;
         }
 
         while (num_entrada_inodo < cant_entradas_inodo && strcmp(inicial, entrada.nombre) != 0) {
             num_entrada_inodo++;
             memset(entrada.nombre, 0, sizeof(entrada.nombre));
             if (mi_read_f(*p_inodo_dir, &entrada, num_entrada_inodo * sizeof(struct entrada), sizeof(struct entrada)) < 0) {
-                return ERROR_PERMISO_LECTURA;
+                perror("Error en mi_read_f en buscar_entrada()");
+                return FALLO;
             }
         }
     }
@@ -124,7 +126,7 @@ int buscar_entrada(const char* camino_parcial, unsigned int* p_inodo_dir, unsign
 #if DEBUG7
                 fprintf(stderr, "[buscar_entrada()->creada entrada: %s, %d] \n", inicial, entrada.ninodo);
 #endif
-                if (mi_write_f(*p_inodo_dir, entrada.nombre, num_entrada_inodo * sizeof(entrada), sizeof(entrada)) == -1) {
+                if (mi_write_f(*p_inodo_dir, &entrada, num_entrada_inodo * sizeof(entrada), sizeof(entrada)) == -1) {
                     if (entrada.ninodo != -1) {
                         liberar_inodo(entrada.ninodo);
 #if DEBUG7
@@ -172,10 +174,10 @@ int mi_creat(const char* camino, unsigned char permisos) {
     unsigned int p_inodo = 0;
     unsigned int p_entrada = 0;
 
-    int op_incorrecta = buscar_entrada(camino, &p_inodo_dir, &p_inodo, &p_entrada, 1, permisos);
+    int error = buscar_entrada(camino, &p_inodo_dir, &p_inodo, &p_entrada, 1, permisos);
 
-    if (op_incorrecta < 0) {
-        mostrar_error_buscar_entrada(op_incorrecta);
+    if (error < 0) {
+        mostrar_error_buscar_entrada(error);
 
         return FALLO;
     }
@@ -183,106 +185,90 @@ int mi_creat(const char* camino, unsigned char permisos) {
 }
 
 int mi_dir(const char* camino, char* buffer) {
-    struct entrada buf_entradas[BLOCKSIZE / sizeof(struct entrada)];
 
-    unsigned int p_inodo_dir = 0;
-    unsigned int p_inodo = 0;
-    unsigned int p_entrada = 0;
-    char inicial[TAMFILA];
     struct inodo inodo;
-    int cant_entradas_inodo, ind_buffer;
-    int op_incorrecta = buscar_entrada(camino, &p_inodo_dir, &p_inodo, &p_entrada, 0, 0);
-    if (op_incorrecta >= 0) {
-        int num_entrada_inodo = 0;
-        leer_inodo(p_inodo, &inodo);
-        if (inodo.tipo == 'd') {
-            cant_entradas_inodo = inodo.tamEnBytesLog / sizeof(struct entrada);
-            if (cant_entradas_inodo > 0) {
-                while (num_entrada_inodo < cant_entradas_inodo) {
-                    memset(buf_entradas, 0, BLOCKSIZE);
-                    mi_read_f(p_inodo, &buf_entradas, num_entrada_inodo * sizeof(struct entrada), BLOCKSIZE);
-                    for (ind_buffer = 0; ind_buffer < BLOCKSIZE / sizeof(struct entrada) && (num_entrada_inodo < cant_entradas_inodo) && (strcmp(inicial, buf_entradas[ind_buffer].nombre) != 0); ind_buffer++) {
-                        leer_inodo(buf_entradas[ind_buffer].ninodo, &inodo);
-                        char c[2];
-                        c[0] = inodo.tipo;
-                        strcat(buffer, c);
-                        strcat(buffer, "\t");
-                        if (inodo.permisos & 4)
-                            strcat(buffer, "r");
-                        else
-                            strcat(buffer, "-");
-                        if (inodo.permisos & 2)
-                            strcat(buffer, "w");
-                        else
-                            strcat(buffer, "-");
-                        if (inodo.permisos & 1)
-                            strcat(buffer, "x");
-                        else
-                            strcat(buffer, "-");
-                        strcat(buffer, "\t");
-                        struct tm* tm;
-                        char tmp[TAMFILA];
-                        memset(tmp, 0, TAMFILA);
-                        tm = localtime(&inodo.mtime);
-                        sprintf(tmp, "%d-%02d-%02d %02d:%02d:%02d", tm->tm_year + 1900, tm->tm_mon + 1, tm->tm_mday, tm->tm_hour, tm->tm_min, tm->tm_sec);
-                        strcat(buffer, tmp);
-                        strcat(buffer, "\t");
-                        char info[20];
-                        memset(info, 0, 20);
-                        sprintf(info, "%d", inodo.tamEnBytesLog);
-                        strcat(buffer, info);
-                        strcat(buffer, "\t");
-                        char final_aux[TAMFILA];
-                        memset(final_aux, 0, TAMFILA);
-                        if (inodo.tipo == 'd') {
-                            do {
-                                extraer_camino(buf_entradas[ind_buffer].nombre, inicial, final_aux, 0);
-                            } while (strcmp(final_aux, "/") == 0);
-                            strcat(buffer, buf_entradas[ind_buffer].nombre);
-                        } else
-                            strcat(buffer, buf_entradas[ind_buffer].nombre);
-                        strcat(buffer, "\n");
-                        num_entrada_inodo++;
-                    }
-                }
-            }
-        } else {
-            struct entrada entrada;
-            mi_read_f(p_inodo, &buf_entradas, num_entrada_inodo * sizeof(struct entrada), BLOCKSIZE);
-            leer_inodo(entrada.ninodo, &inodo);
-            strcat(buffer, "f");
-            strcat(buffer, "\t");
-            if (inodo.permisos & 4)
-                strcat(buffer, "r");
-            else
-                strcat(buffer, "-");
-            if (inodo.permisos & 2)
-                strcat(buffer, "w");
-            else
-                strcat(buffer, "-");
-            if (inodo.permisos & 1)
-                strcat(buffer, "x");
-            else
-                strcat(buffer, "-");
-            strcat(buffer, "\t");
-            char tmp[TAMFILA];
-            memset(tmp, 0, TAMFILA);
-            struct tm* tm;
-            tm = localtime(&inodo.mtime);
-            sprintf(tmp, "%d-%02d-%02d %02d:%02d:%02d", tm->tm_year + 1900, tm->tm_mon + 1, tm->tm_mday, tm->tm_hour, tm->tm_min, tm->tm_sec);
-            strcat(buffer, tmp);
-            strcat(buffer, "\t");
-            char info[20];
-            memset(info, 0, 20);
-            sprintf(info, "%d", inodo.tamEnBytesLog);
-            strcat(buffer, info);
-            strcat(buffer, "\t");
-            strcat(buffer, entrada.nombre);
-        }
-    } else {
-        mostrar_error_buscar_entrada(op_incorrecta);
-        return FALLO;
+    unsigned int p_inodo_dir = 0, p_inodo = 0, p_entrada = 0, cant_entradas_inodo;
+    int error;
+    char tamBytes[16], tipo[2];
+
+    if ((error = buscar_entrada(camino, &p_inodo_dir, &p_inodo, &p_entrada, 0, 4)) < 0) {
+        return error;
     }
+
+    if (leer_inodo(p_inodo, &inodo) == -1) {
+        return -1;
+    }
+
+    if (inodo.tipo != 'd') {
+        return -1;
+    }
+
+    if ((inodo.permisos & 4) != 4) {
+        return -1;
+    }
+
+    cant_entradas_inodo = inodo.tamEnBytesLog / sizeof(struct entrada);
+    struct entrada buffer_entradas[cant_entradas_inodo];
+
+    //Lectura de la entrada
+    if (mi_read_f(p_inodo, &buffer_entradas, 0, sizeof(struct entrada) * cant_entradas_inodo) == -1) {
+        return -1;
+    }
+
+    strcpy(buffer, "");
+
+    for (int i = 0; i < cant_entradas_inodo; i++) {
+
+        //Lectura inodo
+        if (leer_inodo(buffer_entradas[i].ninodo, &inodo) == -1) {
+            return -1;
+        }
+
+        if (inodo.tipo == 'd') {
+            strcat(buffer, GREEN);
+        } else {
+            strcat(buffer, CYAN);
+        }
+
+        //Para cada entrada concatenamos su nombre al buffer e incorporamos la información del inodo
+        sprintf(tipo, "%c", inodo.tipo);
+        strcat(buffer, tipo);
+        strcat(buffer, "\t\t");
+
+        if ((inodo.permisos & 4) == 4) {
+            strcat(buffer, "r");
+        } else {
+            strcat(buffer, "-");
+        }
+
+        if ((inodo.permisos & 2) == 2) {
+            strcat(buffer, "w");
+        } else {
+            strcat(buffer, "-");
+        }
+
+        if ((inodo.permisos & 1) == 1) {
+            strcat(buffer, "x");
+        } else {
+            strcat(buffer, "-");
+        }
+
+        strcat(buffer, "\t");
+
+        struct tm* ts;
+        char mtime[80];
+        ts = localtime(&inodo.mtime);
+        strftime(mtime, sizeof(mtime), "%a %Y-%m-%d %H:%M:%S", ts);
+        strcat(buffer, mtime);
+        sprintf(tamBytes, "\t\t%d", inodo.tamEnBytesLog);
+        strcat(buffer, tamBytes);
+        strcat(buffer, "\t\t");
+        strcat(buffer, buffer_entradas[i].nombre);
+        strcat(buffer, RESET);
+        strcat(buffer, "\n");
+    }
+
+    //Devolvemos el número de entradas
     return cant_entradas_inodo;
 }
 
@@ -291,12 +277,12 @@ int mi_chmod(const char* camino, unsigned char permisos) {
     unsigned int p_inodo_dir = 0;
     unsigned int p_inodo = 0;
     unsigned int p_entrada = 0;
-    int op_incorrecta = buscar_entrada(camino, &p_inodo_dir, &p_inodo, &p_entrada, 0, 0);
-    if (op_incorrecta >= 0) {
+    int error = buscar_entrada(camino, &p_inodo_dir, &p_inodo, &p_entrada, 0, permisos);
+    if (error >= 0) {
         mi_chmod_f(p_inodo, permisos);
         return EXITO;
     } else {
-        mostrar_error_buscar_entrada(op_incorrecta);
+        mostrar_error_buscar_entrada(error);
         return FALLO;
     }
 }
@@ -310,14 +296,11 @@ int mi_stat(const char* camino, struct STAT* p_stat) {
     int error;
 
 
-    if ((error = buscar_entrada(camino, &p_inodo_dir, &p_inodo, &p_entrada, reservar, 6)) < 0) {
+    if ((error = buscar_entrada(camino, &p_inodo_dir, &p_inodo, &p_entrada, reservar, 4)) < 0) {
         mostrar_error_buscar_entrada(error);
     }
-
-    mi_stat_f(p_inodo, p_stat);
-    return p_inodo;
-
-
+    printf("Nº de inodo: %d\n", p_inodo);
+    return mi_stat_f(p_inodo, p_stat);
 }
 
 
@@ -354,4 +337,91 @@ int mi_read(const char* camino, void* buf, unsigned int offset, unsigned int nby
         }
     }
     return mi_read_f(p_inodo, buf, offset, nbytes);
+}
+
+int mi_link(const char* camino1, const char* camino2) {
+    unsigned int p_entrada = 0;
+    unsigned int p_inodo_dir = 0;
+    unsigned int p_inodo = 0;
+    unsigned int p_inodo_source;
+    struct inodo inodo;
+    int error = buscar_entrada(camino1, &p_inodo_dir, &p_inodo, &p_entrada, 0, 4);
+    if (error >= 0) {
+        if (leer_inodo(p_inodo, &inodo) < 0) {
+            perror("Error al leer_inodo en mi_link");
+        }
+        if (inodo.tipo == 'f' && inodo.permisos & 4) {
+            p_inodo_source = p_inodo;
+            p_inodo = 0;
+            p_inodo_dir = 0;
+            p_entrada = 0;
+            error = buscar_entrada(camino2, &p_inodo_dir, &p_inodo, &p_entrada, 1, 6);
+            if (error >= 0) {
+                struct entrada entrada;
+
+                if (mi_read_f(p_inodo_dir, &entrada, p_entrada * (sizeof(struct entrada)), sizeof(struct entrada)) < 0) {
+                    perror("Error en mi_read_f en mi_link");
+                }
+
+                entrada.ninodo = p_inodo_source;
+
+                if (mi_write_f(p_inodo_dir, &entrada, p_entrada * sizeof(struct entrada), sizeof(struct entrada)) < 0) {
+                    perror("Error en mi_write_f en mi_link");
+                }
+
+                liberar_inodo(p_inodo);
+                inodo.nlinks++;
+                inodo.ctime = time(NULL);
+                return escribir_inodo(p_inodo_source, &inodo);
+            } else {
+                mostrar_error_buscar_entrada(error);
+                return FALLO;
+            }
+        }
+        return EXITO;
+    } else {
+        mostrar_error_buscar_entrada(error);
+        return FALLO;
+    }
+}
+
+
+int mi_unlink(const char* camino) {
+    unsigned int p_inodo_dir = 0;
+    unsigned int p_inodo = 0;
+    unsigned int p_entrada = 0, cant_entradas_inodo;
+    struct inodo inodo;
+    int error = buscar_entrada(camino, &p_inodo_dir, &p_inodo, &p_entrada, 0, 4);
+    if (error >= 0) {
+        leer_inodo(p_inodo, &inodo);
+        if (inodo.tamEnBytesLog > 0 && inodo.tipo == 'd') {
+            fprintf(stderr, RED "El directorio %s no está vacío, no se puede borrar" RESET, camino);
+            return FALLO;
+        }
+        leer_inodo(p_inodo_dir, &inodo);
+        cant_entradas_inodo = inodo.tamEnBytesLog / sizeof(struct entrada);
+        if (p_entrada != cant_entradas_inodo - 1) {
+            struct entrada borrada, aux;
+            int size = sizeof(struct entrada);
+            int n_entrada = size * p_entrada;
+            // leemos la entrada a borrar en memoria
+            mi_read_f(p_inodo_dir, &borrada, n_entrada, size);
+            // Leemos la ultima entrada y la colocamos en la psoicion de la entrada a eliminar
+            mi_read_f(p_inodo_dir, &aux, (cant_entradas_inodo - 1) * size, size);
+            mi_write_f(p_inodo_dir, &aux, n_entrada, size);
+        }
+
+        mi_truncar_f(p_inodo_dir, inodo.tamEnBytesLog - sizeof(struct entrada));
+        leer_inodo(p_inodo, &inodo);
+        inodo.nlinks = inodo.nlinks - 1;
+        if (inodo.nlinks > 0) {
+            inodo.ctime = time(NULL);
+            escribir_inodo(p_inodo, &inodo);
+        } else
+            liberar_inodo(p_inodo);
+        return EXITO;
+    } else {
+        mostrar_error_buscar_entrada(error);
+        return EXITO;
+    }
 }

@@ -1,18 +1,8 @@
-/*
-Grupo: BMR
-----------------------------------------
-Intregrantes:
-    - Miquel Àngel Montero Pazmiño
-    - René Alejandro Flores Castillo
-*/
-
 #include "directorios.h"
-
-/*
-Función: int main()
-----------------------------------------
-Cambia los permisos de un
-fichero o directorio.
+/**
+ * @author Bernat Parera
+ * @author Rafael Crespí
+ * @author Otto Vásquez
 */
 
 int main(int argc, char** argv) {

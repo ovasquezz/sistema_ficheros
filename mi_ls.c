@@ -1,4 +1,9 @@
 #include "directorios.h"
+/**
+ * @author Bernat Parera
+ * @author Rafael Crespí
+ * @author Otto Vásquez
+*/
 
 int main(int argc, char** argv) {
     bmount(argv[1]);

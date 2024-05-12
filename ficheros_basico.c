@@ -444,8 +444,8 @@ int liberar_inodo(unsigned int ninodo) {
     if (inodo.tamEnBytesLog>0){
         bloquesL = liberar_bloques_inodo(0, &inodo);
     }
-    printf("Liberados %d\n", bloquesL);
-    printf("inodo.numBloquesOcupados %d\n", inodo.numBloquesOcupados);
+    // printf("Liberados %d\n", bloquesL);
+    // printf("inodo.numBloquesOcupados %d\n", inodo.numBloquesOcupados);
 
     inodo.tipo = 'l';
     inodo.tamEnBytesLog = 0;
