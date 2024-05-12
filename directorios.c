@@ -7,6 +7,9 @@
 */
 
 struct entrada* entrada;
+static struct UltimaEntrada UltimaEntradaEscritura;
+static struct UltimaEntrada UltimaEntradaLectura;
+
 int extraer_camino(const char* camino, char* inicial, char* final, char* tipo) {
     if (camino[0] != '/') { // Si el camino no comienza con /
         return FALLO;
@@ -312,7 +315,43 @@ int mi_stat(const char* camino, struct STAT* p_stat) {
     }
 
     mi_stat_f(p_inodo, p_stat);
-    return p_inodo  ;
+    return p_inodo;
 
 
+}
+
+
+int mi_write(const char* camino, const void* buf, unsigned int offset, unsigned int nbytes) {
+    unsigned int p_inodo = 0;
+    unsigned int ninodo = 0;
+    unsigned int inicial = 0;
+    if (strcmp(UltimaEntradaEscritura.camino, camino) == 0) {
+        p_inodo = UltimaEntradaEscritura.p_inodo;
+    } else {
+        if (buscar_entrada(camino, &ninodo, &p_inodo, &inicial, 0, 4) == -1) {
+            return FALLO;
+        } else {
+            strcpy(UltimaEntradaEscritura.camino, camino);
+            UltimaEntradaEscritura.p_inodo = p_inodo;
+        }
+    }
+    return mi_write_f(p_inodo, buf, offset, nbytes);
+}
+
+
+int mi_read(const char* camino, void* buf, unsigned int offset, unsigned int nbytes) {
+    unsigned int p_inodo = 0;
+    unsigned int ninodo = 0;
+    unsigned int inicial = 0;
+    if (strcmp(UltimaEntradaLectura.camino, camino) == 0) {
+        p_inodo = UltimaEntradaLectura.p_inodo;
+    } else {
+        if (buscar_entrada(camino, &ninodo, &p_inodo, &inicial, 0, 2) == -1) {
+            return FALLO;
+        } else {
+            strcpy(UltimaEntradaLectura.camino, camino);
+            UltimaEntradaLectura.p_inodo = p_inodo;
+        }
+    }
+    return mi_read_f(p_inodo, buf, offset, nbytes);
 }
