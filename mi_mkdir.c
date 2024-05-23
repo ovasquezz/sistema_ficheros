@@ -7,7 +7,7 @@
 
 int main(int argc, char** argv) {
     if (argc == 4) {
-        char *disco, *ruta;
+        char* disco, * ruta;
         int permisos;
 
         disco = argv[1];
@@ -15,9 +15,11 @@ int main(int argc, char** argv) {
         ruta = argv[3];
 
         bmount(disco);
-        if(mi_creat(ruta, permisos)<0){
+        if (mi_creat(ruta, permisos) < 0) {
+            bumount(disco);
             return FALLO;
         }
+        bumount(disco);
     } else {
         perror(RED "Sintaxis incorrecta, sintaxis correcta:./mi_mkdir <disco> <permisos> </ruta>\n");
         return FALLO;

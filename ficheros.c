@@ -33,10 +33,12 @@ int mi_write_f(unsigned int ninodo, const void* buf_original, unsigned int offse
             return FALLO;
         }
         if (bread(nbfisico, &buf_bloque) == -1) {
+            mi_signalSem();
             return FALLO;
         }
         memcpy(buf_bloque + desp1, buf_original, nbytes);
         if (bwrite(nbfisico, buf_bloque) == -1) {
+            mi_signalSem();
             return FALLO;
         }
 
@@ -49,10 +51,12 @@ int mi_write_f(unsigned int ninodo, const void* buf_original, unsigned int offse
             return FALLO;
         }
         if (bread(nbfisico, buf_bloque) == -1) {
+            mi_signalSem();
             return FALLO;
         }
         memcpy(buf_bloque + desp1, buf_original, BLOCKSIZE - desp1);
         if (bwrite(nbfisico, buf_bloque) == -1) {
+            mi_signalSem();
             return FALLO;
         }
         //bloques intermedios
@@ -72,11 +76,13 @@ int mi_write_f(unsigned int ninodo, const void* buf_original, unsigned int offse
             return FALLO;
         }
         if (bread(nbfisico, buf_bloque) == -1) {
+            mi_signalSem();
             return FALLO;
         }
         desp2 = (offset + nbytes - 1) % BLOCKSIZE; // desplazamiento para comprobar nbytes escritos despues del offset
         memcpy(buf_bloque, buf_original + (nbytes - (desp2 + 1)), desp2 + 1);
         if (bwrite(nbfisico, buf_bloque) == -1) {
+            mi_signalSem();
             return FALLO;
         }
     }

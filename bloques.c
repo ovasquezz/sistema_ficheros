@@ -52,12 +52,12 @@ int bmount(const char* camino) {
 */
 int bumount() {
     int exitFile = close(descriptor);
+    deleteSem();
     if (exitFile == FALLO) {
         perror("Error al cerrar el fichero");
         return FALLO;
     } else {
         return EXITO;
-        deleteSem();
     }
 }
 
