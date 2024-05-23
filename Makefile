@@ -1,6 +1,6 @@
 CC=gcc
 CFLAGS=-c -g -Wall -std=gnu99
-DEBUG=-DDEBUG9
+# DEBUG=-DDEBUG9
 #LDFLAGS=-pthread
 
 SOURCES=bloques.c mi_mkfs.c ficheros_basico.c ficheros.c leer_sf.c escribir.c leer.c truncar.c permitir.c directorios.c mi_mkdir.c mi_chmod.c mi_ls.c mi_stat.c mi_escribir.c mi_cat.c  mi_link.c  mi_rm.c #semaforo_mutex_posix.c #simulacion.c verificacion.c
