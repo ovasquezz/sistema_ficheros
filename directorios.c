@@ -166,8 +166,10 @@ void mostrar_error_buscar_entrada(int error) {
 }
 
 int mi_creat(const char* camino, unsigned char permisos) {
+    mi_waitSem();
     if (permisos > 7 || permisos < 0) {
         fprintf(stderr, RED "Error: modo inválido:<<%i>>\n", permisos);
+        mi_signalSem();
         return FALLO;
     }
     unsigned int p_inodo_dir = 0;
@@ -178,9 +180,10 @@ int mi_creat(const char* camino, unsigned char permisos) {
 
     if (error < 0) {
         mostrar_error_buscar_entrada(error);
-
+        mi_signalSem();
         return FALLO;
     }
+    mi_signalSem();
     return EXITO;
 }
 
@@ -340,6 +343,7 @@ int mi_read(const char* camino, void* buf, unsigned int offset, unsigned int nby
 }
 
 int mi_link(const char* camino1, const char* camino2) {
+    mi_waitSem();
     unsigned int p_entrada = 0;
     unsigned int p_inodo_dir = 0;
     unsigned int p_inodo = 0;
@@ -348,7 +352,9 @@ int mi_link(const char* camino1, const char* camino2) {
     int error = buscar_entrada(camino1, &p_inodo_dir, &p_inodo, &p_entrada, 0, 4);
     if (error >= 0) {
         if (leer_inodo(p_inodo, &inodo) < 0) {
+            mi_signalSem();
             perror("Error al leer_inodo en mi_link");
+            return FALLO;
         }
         if (inodo.tipo == 'f' && inodo.permisos & 4) {
             p_inodo_source = p_inodo;
@@ -360,33 +366,42 @@ int mi_link(const char* camino1, const char* camino2) {
                 struct entrada entrada;
 
                 if (mi_read_f(p_inodo_dir, &entrada, p_entrada * (sizeof(struct entrada)), sizeof(struct entrada)) < 0) {
+                    mi_signalSem();
                     perror("Error en mi_read_f en mi_link");
+                    return FALLO;
                 }
 
                 entrada.ninodo = p_inodo_source;
 
                 if (mi_write_f(p_inodo_dir, &entrada, p_entrada * sizeof(struct entrada), sizeof(struct entrada)) < 0) {
+                    mi_signalSem();
                     perror("Error en mi_write_f en mi_link");
+                    return FALLO;
                 }
 
                 liberar_inodo(p_inodo);
                 inodo.nlinks++;
                 inodo.ctime = time(NULL);
+                mi_signalSem();
                 return escribir_inodo(p_inodo_source, &inodo);
             } else {
                 mostrar_error_buscar_entrada(error);
+                mi_signalSem();
                 return FALLO;
             }
         }
+        mi_signalSem();
         return EXITO;
     } else {
         mostrar_error_buscar_entrada(error);
+        mi_signalSem();
         return FALLO;
     }
 }
 
 
 int mi_unlink(const char* camino) {
+    mi_waitSem();
     unsigned int p_inodo_dir = 0;
     unsigned int p_inodo = 0;
     unsigned int p_entrada = 0, cant_entradas_inodo;
@@ -396,6 +411,7 @@ int mi_unlink(const char* camino) {
         leer_inodo(p_inodo, &inodo);
         if (inodo.tamEnBytesLog > 0 && inodo.tipo == 'd') {
             fprintf(stderr, RED "El directorio %s no está vacío, no se puede borrar" RESET, camino);
+            mi_signalSem();
             return FALLO;
         }
         leer_inodo(p_inodo_dir, &inodo);
@@ -419,9 +435,11 @@ int mi_unlink(const char* camino) {
             escribir_inodo(p_inodo, &inodo);
         } else
             liberar_inodo(p_inodo);
+        mi_signalSem();
         return EXITO;
     } else {
         mostrar_error_buscar_entrada(error);
+        mi_signalSem();
         return EXITO;
     }
 }
