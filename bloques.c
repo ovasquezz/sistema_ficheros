@@ -51,9 +51,9 @@ int bmount(const char* camino) {
  * Desmonta el dispositivo virtual
 */
 int bumount() {
-    int exitFile = close(descriptor);
+    descriptor = close(descriptor);
     deleteSem();
-    if (exitFile == FALLO) {
+    if (descriptor == FALLO) {
         perror("Error al cerrar el fichero");
         return FALLO;
     } else {
