@@ -324,7 +324,7 @@ int mi_stat(const char* camino, struct STAT* p_stat) {
     if ((error = buscar_entrada(camino, &p_inodo_dir, &p_inodo, &p_entrada, reservar, 4)) < 0) {
         mostrar_error_buscar_entrada(error);
     }
-    printf("Nº de inodo: %d\n", p_inodo);
+    // printf("Nº de inodo: %d\n", p_inodo);
     return mi_stat_f(p_inodo, p_stat);
 }
 
