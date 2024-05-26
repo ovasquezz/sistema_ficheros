@@ -4,12 +4,15 @@
  * @author Rafael Crespí
  * @author Otto Vásquez
 */
-//funcion para escribir texto en inodos haciendo uso de reservar_inodo(f,6) para obtener ninodo imprimirlo por pantalla y usarlo en mi_write_f()
+
+/**
+ * Funcion para escribir texto en inodos haciendo uso de reservar_inodo(f,6) para obtener ninodo imprimirlo por pantalla y usarlo en mi_write_f()
+ */
 int main(int argc, char** argv) {
-    if(argc != 4){
-		printf("Sintaxis: escribir <nombre_dispositivo> <\"$(cat fichero)\"> <diferentes_inodos>\n");
-		return -1;
-	}
+    if (argc != 4) {
+        printf("Sintaxis: escribir <nombre_dispositivo> <\"$(cat fichero)\"> <diferentes_inodos>\n");
+        return -1;
+    }
     void* nombre_fichero = argv[1];
     char* string = argv[2];
     int reserva_inodo = atoi(argv[3]); //offset

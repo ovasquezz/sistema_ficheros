@@ -2,6 +2,12 @@
 #include <signal.h>
 #include "directorios.h"
 
+/**
+ * @author Bernat Parera
+ * @author Rafael Crespí
+ * @author Otto Vásquez
+*/
+
 #define REGMAX 500000
 #define NUMESCRITURAS 50 //10 para prueba
 #define NUMPROCESOS 100 //3 para prueba

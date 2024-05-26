@@ -1,5 +1,5 @@
 #include "directorios.h"
-
+#define DEBUG7 0
 /**
  * @author Bernat Parera
  * @author Rafael Crespí
@@ -10,6 +10,9 @@ struct entrada* entrada;
 static struct UltimaEntrada UltimaEntradaEscritura;
 static struct UltimaEntrada UltimaEntradaLectura;
 
+/**
+ * Funcion para obtener el camino del directorio o fichero
+*/
 int extraer_camino(const char *camino, char *inicial, char *final, char *tipo) {
     const char *aux;
 
@@ -35,6 +38,9 @@ int extraer_camino(const char *camino, char *inicial, char *final, char *tipo) {
     return EXIT_SUCCESS;
 }
 
+/**
+ * Funcion para buscar una entrada entre las entradas del inodo correspondiente a su directorio padre
+*/
 int buscar_entrada(const char* camino_parcial, unsigned int* p_inodo_dir, unsigned int* p_inodo, unsigned int* p_entrada, char reservar, unsigned char permisos) {
     struct entrada entrada;
     struct inodo inodo_dir;
@@ -152,6 +158,9 @@ int buscar_entrada(const char* camino_parcial, unsigned int* p_inodo_dir, unsign
     return 0;
 }
 
+/**
+ * Funcion auxiliar para obtener el error especifico de la funcion buscar_entrada()
+*/
 void mostrar_error_buscar_entrada(int error) {
     switch (error) {
     case -2: fprintf(stderr, RED "Error: Camino incorrecto.\n"); break;
@@ -165,6 +174,9 @@ void mostrar_error_buscar_entrada(int error) {
     fprintf(stderr, WHITE);
 }
 
+/**
+ * Funcion para crear un fichero/directorio y su entrada de directorio
+*/
 int mi_creat(const char* camino, unsigned char permisos) {
     mi_waitSem();
     if (permisos > 7 || permisos < 0) {
@@ -187,6 +199,9 @@ int mi_creat(const char* camino, unsigned char permisos) {
     return EXITO;
 }
 
+/**
+ * Funcion para poner el contenido del directorio en un buffer de memoria y devuelve el número de entradas.
+*/
 int mi_dir(const char* camino, char* buffer) {
 
     struct inodo inodo;
@@ -276,6 +291,9 @@ int mi_dir(const char* camino, char* buffer) {
 }
 
 
+/**
+ * Funcion para cambiar los permisos de un fichero o directorio
+*/
 int mi_chmod(const char* camino, unsigned char permisos) {
     unsigned int p_inodo_dir = 0;
     unsigned int p_inodo = 0;
@@ -290,6 +308,10 @@ int mi_chmod(const char* camino, unsigned char permisos) {
     }
 }
 
+
+/**
+ * Funcion que muestra la información acerca del inodo de un fichero o directorio
+*/
 int mi_stat(const char* camino, struct STAT* p_stat) {
 
     unsigned int p_inodo_dir = 0;
@@ -307,6 +329,9 @@ int mi_stat(const char* camino, struct STAT* p_stat) {
 }
 
 
+/**
+ * Funcion para escribir contenido en un fichero
+*/
 int mi_write(const char* camino, const void* buf, unsigned int offset, unsigned int nbytes) {
     unsigned int p_inodo = 0;
     unsigned int ninodo = 0;
@@ -325,6 +350,9 @@ int mi_write(const char* camino, const void* buf, unsigned int offset, unsigned 
 }
 
 
+/**
+ * Funcion para leer contenido en un fichero
+*/
 int mi_read(const char* camino, void* buf, unsigned int offset, unsigned int nbytes) {
     unsigned int p_inodo = 0;
     unsigned int ninodo = 0;
@@ -342,6 +370,10 @@ int mi_read(const char* camino, void* buf, unsigned int offset, unsigned int nby
     return mi_read_f(p_inodo, buf, offset, nbytes);
 }
 
+
+/**
+ * Funcion que crea un enlace a un fichero
+*/
 int mi_link(const char* camino1, const char* camino2) {
     mi_waitSem();
     unsigned int p_entrada = 0;
@@ -400,6 +432,9 @@ int mi_link(const char* camino1, const char* camino2) {
 }
 
 
+/**
+ * Funcion que deshace un enlace a un fichero
+*/
 int mi_unlink(const char* camino) {
     mi_waitSem();
     unsigned int p_inodo_dir = 0;

@@ -6,6 +6,10 @@
 */
 
 
+/**
+ * Escribe el contenido procedente de un buffer de memoria en un fichero/directorio,
+ * le indicamos la posición de escritura inicial en bytes lógicos, offset, con respecto al inodo, y el número de bytes, nbytes, que hay que escribir.
+*/
 int mi_write_f(unsigned int ninodo, const void* buf_original, unsigned int offset, unsigned int nbytes) {
     struct inodo inodo;
     unsigned int primerBL, ultimoBL, desp1, desp2, nbfisico;
@@ -99,12 +103,17 @@ int mi_write_f(unsigned int ninodo, const void* buf_original, unsigned int offse
     return nbytes; // numero de bytes escritos
 }
 
+
+/**
+ * Lee información de un fichero/directorio y la almacena en un buffer de memoria,
+ * le indicamos la posición de lectura inicial offset con respecto al inodo (en bytes) y el número de bytes nbytes que hay que leer.
+*/
 int mi_read_f(unsigned int ninodo, void* buf_original, unsigned int offset, unsigned int nbytes) {
     struct inodo inodo;
     unsigned char buf_bloque[BLOCKSIZE];
     int leidos, bl_fisico;
 
-    if (leer_inodo(ninodo, &inodo) == -1){
+    if (leer_inodo(ninodo, &inodo) == -1) {
         perror("Error leer_inodo en mi_read_f");
         return FALLO;
     }
@@ -180,6 +189,10 @@ int mi_read_f(unsigned int ninodo, void* buf_original, unsigned int offset, unsi
     return leidos;
 }
 
+
+/**
+ * Devuelve la metainformación de un fichero/directorio
+*/
 int mi_stat_f(unsigned int ninodo, struct STAT* p_stat) {
     struct inodo inodo;
     if (leer_inodo(ninodo, &inodo) == -1) {
@@ -197,6 +210,11 @@ int mi_stat_f(unsigned int ninodo, struct STAT* p_stat) {
     return 1;
 
 }
+
+
+/**
+ * Cambia los permisos de un fichero/directorio
+*/
 int mi_chmod_f(unsigned int ninodo, unsigned char permisos) {
     mi_waitSem();
     struct inodo inodo;
@@ -216,6 +234,10 @@ int mi_chmod_f(unsigned int ninodo, unsigned char permisos) {
     return 1;
 }
 
+
+/**
+ * Trunca un fichero/directorio a los bytes indicados como nbytes, liberando los bloques necesarios.
+*/
 int mi_truncar_f(unsigned int ninodo, unsigned int nbytes) {
     struct inodo inodo;
     unsigned int primerBL;

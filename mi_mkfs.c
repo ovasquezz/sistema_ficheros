@@ -6,7 +6,7 @@
 */
 
 int main(int argc, char** argv) {
-    ////Comprobamos sintaxis
+    //Comprobamos sintaxis
     if (argc < 3) {
         fprintf(stderr, "Error al introducir el comando\n");
         return FALLO;

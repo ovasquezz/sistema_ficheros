@@ -2,6 +2,12 @@
 #define DEBUG12a 0
 #define DEBUG12b 0
 
+/**
+ * @author Bernat Parera
+ * @author Rafael Crespí
+ * @author Otto Vásquez
+*/
+
 int acabados = 0;
 
 int main(int argc, char** argv) {
@@ -33,6 +39,7 @@ int main(int argc, char** argv) {
         return FALLO;
     }
 
+    printf("Directorio: %s \n", stringDirectorioSimulacion);
     printf("*** SIMULACIÓN DE %d PROCESOS REALIZANDO CADA UNO %d ESCRITURAS *** \n", NUMPROCESOS, NUMESCRITURAS);
 
     int proceso;
@@ -94,7 +101,7 @@ int main(int argc, char** argv) {
 #if DEBUG12b
             printf("[Proceso %d: Completadas %d escrituras en %s]\n", proceso, NUMESCRITURAS, stringFicheroPrueba);
 #endif
-            exit(EXITO); //Necesario para que se emita la señal SIGCHLD
+            exit(EXITO);
         }
         //Esperamos para lanzar el siguiente proceso 0,15 segundos
         usleep(150000);

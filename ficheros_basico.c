@@ -4,10 +4,11 @@
  * @author Rafael Crespí
  * @author Otto Vásquez
 */
+#define DEBUG 0
 
-#define DEBUGN4 1 //traducir_bloque_inodo()
-#define DEBUGN6 1 //liberar_bloques_inodo()
-
+/**
+ * Funcion que calcula el tamaño en bloques necesario para el mapa de bits.
+*/
 int tamMB(unsigned int nbloques) {
     // comprobamos si hay un resto en la división
     if ((nbloques / 8) % BLOCKSIZE > 0) {
@@ -18,9 +19,13 @@ int tamMB(unsigned int nbloques) {
     return nbloques / 8 / BLOCKSIZE;
 }
 
+
+/**
+ * Funcion que calcula el tamaño en bloques del array de inodos.
+*/
 int tamAI(unsigned int ninodos) {
     // comprobamos si hay un resto en la división
-    if (((ninodos * INODOSIZE) % BLOCKSIZE)> 0) {
+    if (((ninodos * INODOSIZE) % BLOCKSIZE) > 0) {
         // Si hay resto necesitaremos 1 bloque mas
         return ninodos / (BLOCKSIZE / INODOSIZE) + 1;
     }
@@ -28,6 +33,10 @@ int tamAI(unsigned int ninodos) {
     return ninodos / (BLOCKSIZE / INODOSIZE);
 }
 
+
+/**
+ * Funcion que inicializa los datos del superbloque
+*/
 int initSB(unsigned int nbloques, unsigned int ninodos) {
     struct superbloque SB;
     // Completamos la información de las variables de ficheros_basico.h
@@ -51,6 +60,10 @@ int initSB(unsigned int nbloques, unsigned int ninodos) {
     return EXITO;
 }
 
+
+/**
+ * Funcion que inicializa el mapa de bits poniendo a 1 los bits que representan los metadatos.
+*/
 int initMB() {
     struct superbloque SB;
     if (bread(posSB, &SB) < 0) {
@@ -89,6 +102,10 @@ int initMB() {
     return EXITO;
 }
 
+
+/**
+ * Funcion que inicializa la lista de inodos libres.
+*/
 int initAI() {
     struct superbloque SB;
     bread(posSB, &SB);
@@ -114,6 +131,9 @@ int initAI() {
     return bwrite(posSB, &SB);
 }
 
+/**
+ * Funcion que escribe el valor indicado por el parámetro en un determinado bit del MB que representa el bloque nbloque.
+*/
 int escribir_bit(unsigned int nbloque, unsigned int bit) {
     struct superbloque SB;
     if (bread(posSB, &SB) == -1) {
@@ -146,7 +166,9 @@ int escribir_bit(unsigned int nbloque, unsigned int bit) {
 }
 
 
-
+/**
+ * Lee un determinado bit del MB y devuelve el valor del bit leído.
+*/
 char leer_bit(unsigned int nbloque) {
     struct superbloque SB;
     if (bread(posSB, &SB) < 0) {
@@ -174,6 +196,10 @@ char leer_bit(unsigned int nbloque) {
     return mask;
 }
 
+/**
+ * Encuentra el primer bloque libre, consultando el MB (primer bit a 0), lo ocupa
+ * (poniendo el correspondiente bit a 1 con la ayuda de la función escribir_bit()) y devuelve su posición.
+*/
 int reservar_bloque() {
     struct superbloque SB;
     if (bread(posSB, &SB) < 0) {
@@ -218,6 +244,10 @@ int reservar_bloque() {
     return FALLO;
 }
 
+
+/**
+ * Libera un bloque determinado.
+*/
 int liberar_bloque(unsigned int nbloque) {
     struct superbloque SB;
     escribir_bit(nbloque, 0);
@@ -233,6 +263,9 @@ int liberar_bloque(unsigned int nbloque) {
 }
 
 
+/**
+ * Escribe el contenido de una variable de tipo struct inodo, pasada por referencia, en un determinado inodo del array de inodos, inodos.
+*/
 int escribir_inodo(unsigned int ninodo, struct inodo* inodo) {
     struct superbloque SB;
     if (bread(posSB, &SB) < 0) {
@@ -253,6 +286,10 @@ int escribir_inodo(unsigned int ninodo, struct inodo* inodo) {
     return EXITO;
 }
 
+
+/**
+ * Lee un determinado inodo del array de inodos para volcarlo en una variable de tipo struct inodo pasada por referencia.
+*/
 int leer_inodo(unsigned int ninodo, struct inodo* inodo) {
     struct superbloque SB;
     if (bread(posSB, &SB) == -1) {
@@ -271,6 +308,9 @@ int leer_inodo(unsigned int ninodo, struct inodo* inodo) {
 }
 
 
+/**
+ * Encuentra el primer inodo libre, lo reserva, devuelve su número y actualiza la lista enlazada de inodos libres.
+*/
 int reservar_inodo(unsigned char tipo, unsigned char permisos) {
     struct superbloque SB;
     struct inodo inodo;
@@ -317,6 +357,9 @@ int reservar_inodo(unsigned char tipo, unsigned char permisos) {
     return posInodoReservado;
 }
 
+/**
+ * Funcion para obtener el rango de punteros
+*/
 int obtener_nRangoBL(struct inodo* inodo, unsigned int nblogico, unsigned int* ptr) {
     if (nblogico < DIRECTOS) {
         *ptr = inodo->punterosDirectos[nblogico];
@@ -337,6 +380,10 @@ int obtener_nRangoBL(struct inodo* inodo, unsigned int nblogico, unsigned int* p
     }
 }
 
+
+/**
+ * Funcion para la obtención de los índices de los bloques de punteros
+*/
 int obtener_indice(unsigned int nblogico, int nivel_punteros) {
     if (nblogico < DIRECTOS) { //ej. nblogico=8
         return nblogico;
@@ -361,6 +408,11 @@ int obtener_indice(unsigned int nblogico, int nivel_punteros) {
 }
 
 
+/**
+ * Esta función se encarga de obtener el nº de bloque físico correspondiente a un bloque lógico determinado del inodo indicado.
+ * Enmascara la gestión de los diferentes rangos de punteros directos e indirectos del inodo, de manera que
+ * funciones externas no tienen que preocuparse de cómo acceder a los bloques físicos apuntados desde el inodo
+*/
 int traducir_bloque_inodo(unsigned int ninodo, struct inodo* inodo, unsigned int nblogico, unsigned char reservar) {
     //VAR
     unsigned int ptr, ptr_ant;
@@ -437,11 +489,15 @@ int traducir_bloque_inodo(unsigned int ninodo, struct inodo* inodo, unsigned int
     return ptr; // numero de bloque fisico correspondiente al bloque de datos logico, nblogico
 }
 
+
+/**
+ * Funcion para liberar un inodo, liberar boques de datos y bloques de índice
+*/
 int liberar_inodo(unsigned int ninodo) {
     struct inodo inodo;
     int bloquesL = 0;
     leer_inodo(ninodo, &inodo);
-    if (inodo.tamEnBytesLog>0){
+    if (inodo.tamEnBytesLog > 0) {
         bloquesL = liberar_bloques_inodo(0, &inodo);
     }
     // printf("Liberados %d\n", bloquesL);
@@ -450,7 +506,7 @@ int liberar_inodo(unsigned int ninodo) {
     inodo.tipo = 'l';
     inodo.tamEnBytesLog = 0;
     inodo.numBloquesOcupados -= bloquesL;
-     if (inodo.numBloquesOcupados) // !=0
+    if (inodo.numBloquesOcupados) // !=0
         fprintf(stderr, RED "Faltan por liberar %d bloques del inodo\n" RESET, inodo.numBloquesOcupados);
     struct superbloque SB;
     if (bread(posSB, &SB) == -1) {
@@ -473,8 +529,8 @@ int liberar_inodo(unsigned int ninodo) {
 
 /**
  * Libera los bloques de datos e índices iterando desde el primer bloque lógico a liberar hasta el último
+ * Version recursiva con breads y bwrites optimizados
 */
-
 int liberar_bloques_inodo(unsigned int primerBL, struct inodo* inodo) {
     //var
     unsigned int nivel_punteros = 0, nBL = primerBL, ultimoBL, ptr = 0;
@@ -516,7 +572,6 @@ int liberar_bloques_inodo(unsigned int primerBL, struct inodo* inodo) {
 /**
  * Función para liberar bloques directos
 */
-
 int liberar_directos(unsigned int* nBL, unsigned int ultimoBL, struct inodo* inodo, int* eof) {
     //var
     int liberados = 0;
@@ -541,7 +596,6 @@ int liberar_directos(unsigned int* nBL, unsigned int ultimoBL, struct inodo* ino
 /**
  * Función para liberar bloques indirectos de manera recursiva
 */
-
 int liberar_indirectos_recursivo(unsigned int* nBL, unsigned int primerBL, unsigned int ultimoBL, struct inodo* inodo, int nRangoBL, unsigned int nivel_punteros,
     unsigned int* ptr, int* eof, unsigned int* nBLAux, unsigned int* nBreads, unsigned int* nBwrites) {
 
@@ -634,274 +688,3 @@ int liberar_indirectos_recursivo(unsigned int* nBL, unsigned int primerBL, unsig
 
     return liberados;
 }
-
-// // version completa del anexo sin compactar
-// int liberar_bloques_inodo(unsigned int primerBL, struct inodo* inodo) {
-// #define NPUNTEROS (BLOCKSIZE / sizeof(unsigned int)) // 256
-// #define NPUNTEROS2 (NPUNTEROS * NPUNTEROS)           // 65.536
-// #define NPUNTEROS3 (NPUNTEROS * NPUNTEROS * NPUNTEROS) // 16.777.216
-//     unsigned int nivel_punteros, nblog, ultimoBL;
-//     unsigned char bufAux_punteros[BLOCKSIZE];
-//     unsigned int bloques_punteros[3][NPUNTEROS];
-//     int indices_primerBL[3];   // indices del primerBL para cuando se llama desde mi_truncar_f()
-//     int liberados = 0;
-//     int i, j, k; //para iterar en cada nivel de punteros
-//     int eof = 0; //para determinar si hemos llegado al último BL
-//     int contador_breads = 0;  //para comprobar optimización eficiencia
-//     int contador_bwrites = 0; //para comprobar optimización eficiencia
-//     int bloque_modificado[3] = { 0,0,0 }; //para saber si se ha modificado un bloque de punteros de algún nivel
-// #if DEBUG
-//     int BLliberado = 0;  //utilizado para imprimir el nº de bloque lógico que se ha liberado
-// #endif
-
-
-//     if (inodo->tamEnBytesLog == 0)
-//         return 0;
-
-
-//     if (inodo->tamEnBytesLog % BLOCKSIZE == 0) {
-//         ultimoBL = inodo->tamEnBytesLog / BLOCKSIZE - 1;
-//     } else {
-//         ultimoBL = inodo->tamEnBytesLog / BLOCKSIZE;
-//     }
-
-
-// #if DEBUG
-//     fprintf(stderr, "[liberar_bloques_inodo()→ primer BL: %d, último BL: %d]\n", primerBL, ultimoBL);
-// #endif
-
-
-//     memset(bufAux_punteros, 0, BLOCKSIZE);
-
-
-//     //liberamos los bloques de datos de punteros directos
-//     if (primerBL < DIRECTOS) {
-//         nivel_punteros = 0;
-//         i = obtener_indice(primerBL, nivel_punteros);
-//         while (!eof && i < DIRECTOS) {
-//             nblog = i;
-//             if (nblog == ultimoBL) eof = 1;
-//             if (inodo->punterosDirectos[i]) {
-//                 liberar_bloque(inodo->punterosDirectos[i]);
-// #if DEBUG
-//                 fprintf(stderr, "[liberar_bloques_inodo()→ liberado BF %d de datos para BL %d]\n", inodo->punterosDirectos[i], nblog);
-//                 //BLliberado=nblog;
-// #endif
-//                 liberados++;
-//                 inodo->punterosDirectos[i] = 0;
-//             }
-//             i++;
-//         }
-//     }
-//     //liberamos los bloques de datos e índice de Indirectos[0]
-//     if (primerBL < INDIRECTOS0 && !eof) {
-//         nivel_punteros = 1;
-//         if (inodo->punterosIndirectos[0]) {
-//             bread(inodo->punterosIndirectos[0], bloques_punteros[nivel_punteros - 1]);
-//             bloque_modificado[nivel_punteros - 1] = 0;
-//             contador_breads++;
-//             if (primerBL >= DIRECTOS) {
-//                 i = obtener_indice(primerBL, nivel_punteros);
-//             } else {
-//                 i = 0;
-//             }
-//             while (!eof && i < NPUNTEROS) {
-//                 nblog = DIRECTOS + i;
-//                 if (nblog == ultimoBL) eof = 1;
-//                 if (bloques_punteros[nivel_punteros - 1][i]) {
-//                     liberar_bloque(bloques_punteros[nivel_punteros - 1][i]);
-// #if DEBUG
-//                     fprintf(stderr, "[liberar_bloques_inodo()→ liberado BF %d de datos para BL %d]\n", bloques_punteros[nivel_punteros - 1][i], nblog);
-//                     BLliberado = nblog;
-// #endif
-//                     liberados++;
-//                     bloques_punteros[nivel_punteros - 1][i] = 0;
-//                     bloque_modificado[nivel_punteros - 1] = 1;
-//                 }
-//                 i++;
-//             }
-//             if (memcmp(bloques_punteros[nivel_punteros - 1], bufAux_punteros, BLOCKSIZE) == 0) {
-//                 liberar_bloque(inodo->punterosIndirectos[0]); //de punteros
-// #if DEBUG
-//                 fprintf(stderr, "[liberar_bloques_inodo()→ liberado BF %d de punteros_nivel%d correspondiente al BL %d]\n", inodo->punterosIndirectos[0], nivel_punteros, BLliberado);
-// #endif
-//                 liberados++;
-//                 inodo->punterosIndirectos[0] = 0;
-//             } else { // escribimos en el dispositivo el bloque de punteros, si ha sido modificado
-//                 if (bloque_modificado[nivel_punteros - 1]) {
-//                     if (bwrite(inodo->punterosIndirectos[0], bloques_punteros[nivel_punteros - 1]) < 0) return -1;
-//                     contador_bwrites++;
-//                 }
-//             }
-//         }
-//     }
-//     //liberamos los bloques de datos e índice de Indirectos[1]
-//     if (primerBL < INDIRECTOS1 && !eof) {
-//         nivel_punteros = 2;
-//         indices_primerBL[0] = 0;
-//         indices_primerBL[1] = 0;
-//         if (inodo->punterosIndirectos[1]) {
-//             bread(inodo->punterosIndirectos[1], bloques_punteros[nivel_punteros - 1]);
-//             bloque_modificado[nivel_punteros - 1] = 0;
-//             contador_breads++;
-//             if (primerBL >= INDIRECTOS0) {
-//                 i = obtener_indice(primerBL, nivel_punteros);
-//             } else i = 0;
-//             indices_primerBL[nivel_punteros - 1] = i;
-//             while (!eof && i < NPUNTEROS) {
-//                 if (bloques_punteros[nivel_punteros - 1][i]) {
-//                     bread(bloques_punteros[nivel_punteros - 1][i], bloques_punteros[nivel_punteros - 2]);
-//                     bloque_modificado[nivel_punteros - 2] = 0;
-//                     contador_breads++;
-//                     if (i == indices_primerBL[nivel_punteros - 1]) {
-//                         j = obtener_indice(primerBL, nivel_punteros - 1);
-//                         indices_primerBL[nivel_punteros - 2] = j;
-//                     } else j = 0;
-
-//                     while (!eof && j < NPUNTEROS) {
-//                         nblog = INDIRECTOS0 + i * NPUNTEROS + j;
-//                         if (nblog == ultimoBL) eof = 1;
-//                         if (bloques_punteros[nivel_punteros - 2][j]) {
-//                             liberar_bloque(bloques_punteros[nivel_punteros - 2][j]);
-// #if DEBUG
-//                             fprintf(stderr, "[liberar_bloques_inodo()→ liberado BF %d de datos para BL %d]\n", bloques_punteros[nivel_punteros - 2][j], nblog);
-//                             BLliberado = nblog;
-// #endif
-//                             liberados++;
-//                             bloques_punteros[nivel_punteros - 2][j] = 0;
-//                             bloque_modificado[nivel_punteros - 2] = 1;
-//                         }
-//                         j++;
-//                     }
-//                     if (memcmp(bloques_punteros[nivel_punteros - 2], bufAux_punteros, BLOCKSIZE) == 0) {
-//                         liberar_bloque(bloques_punteros[nivel_punteros - 1][i]);//de punteros
-// #if DEBUG
-//                         fprintf(stderr, "[liberar_bloques_inodo()→ liberado BF %d de punteros_nivel%d correspondiente al BL %d]\n", bloques_punteros[nivel_punteros - 1][i], nivel_punteros - 1, BLliberado);
-// #endif
-//                         liberados++;
-//                         bloques_punteros[nivel_punteros - 1][i] = 0;
-//                         bloque_modificado[nivel_punteros - 1] = 1;
-//                     } else { // escribimos en el dispositivo el bloque de punteros, si ha sido modificado
-//                         if (bloque_modificado[nivel_punteros - 2]) {
-//                             if (bwrite(bloques_punteros[nivel_punteros - 1][i], bloques_punteros[nivel_punteros - 2]) < 0) return -1;
-//                             contador_bwrites++;
-//                         }
-//                     }
-//                 }
-//                 i++;
-//             }
-//             if (memcmp(bloques_punteros[nivel_punteros - 1], bufAux_punteros, BLOCKSIZE) == 0) {
-//                 liberar_bloque(inodo->punterosIndirectos[1]);    //de punteros
-// #if DEBUG
-//                 fprintf(stderr, "[liberar_bloques_inodo()→ liberado BF %d de punteros_nivel%d correspondiente al BL %d]\n", inodo->punterosIndirectos[1], nivel_punteros, BLliberado);
-// #endif
-//                 liberados++;
-//                 inodo->punterosIndirectos[1] = 0;
-//             } else { // escribimos en el dispositivo el bloque de punteros, si ha sido modificado
-//                 if (bloque_modificado[nivel_punteros - 1]) {
-//                     if (bwrite(inodo->punterosIndirectos[1], bloques_punteros[nivel_punteros - 1]) < 0) return -1;
-//                     contador_bwrites++;
-//                 }
-//             }
-//         }
-//     }
-//     //liberamos los bloques de datos e índice de Indirectos[2]
-//     if (primerBL < INDIRECTOS2 && !eof) {
-//         nivel_punteros = 3;
-//         indices_primerBL[0] = 0;
-//         indices_primerBL[1] = 0;
-//         indices_primerBL[2] = 0;
-//         if (inodo->punterosIndirectos[2]) {
-//             bread(inodo->punterosIndirectos[2], bloques_punteros[nivel_punteros - 1]);
-//             bloque_modificado[nivel_punteros - 1] = 0;
-//             contador_breads++;
-//             if (primerBL >= INDIRECTOS1) {
-//                 i = obtener_indice(primerBL, nivel_punteros);
-//                 indices_primerBL[nivel_punteros - 1] = i;
-//             } else i = 0;
-//             while (!eof && i < NPUNTEROS) {
-//                 if (bloques_punteros[nivel_punteros - 1][i]) {
-//                     bread(bloques_punteros[nivel_punteros - 1][i], bloques_punteros[nivel_punteros - 2]);
-//                     contador_breads++;
-//                     if (i == indices_primerBL[nivel_punteros - 1]) {
-//                         j = obtener_indice(primerBL, nivel_punteros - 1);
-//                         indices_primerBL[nivel_punteros - 2] = j;
-//                     } else j = 0;
-//                     while (!eof && j < NPUNTEROS) {
-//                         if (bloques_punteros[nivel_punteros - 2][j]) {
-//                             bread(bloques_punteros[nivel_punteros - 2][j], bloques_punteros[nivel_punteros - 3]);
-//                             contador_breads++;
-//                             if (i == indices_primerBL[nivel_punteros - 1] && j == indices_primerBL[nivel_punteros - 2]) {
-//                                 k = obtener_indice(primerBL, nivel_punteros - 2);
-//                                 indices_primerBL[nivel_punteros - 3] = k;
-//                             } else k = 0;
-//                             while (!eof && k < NPUNTEROS) {
-//                                 nblog = INDIRECTOS1 + i * NPUNTEROS2 + j * NPUNTEROS + k;
-//                                 if (nblog == ultimoBL) eof = 1;
-//                                 if (bloques_punteros[nivel_punteros - 3][k]) {
-//                                     liberar_bloque(bloques_punteros[nivel_punteros - 3][k]);
-// #if DEBUG
-//                                     fprintf(stderr, "[liberar_bloques_inodo()→ liberado BF %d de datos para BL %d]\n", bloques_punteros[nivel_punteros - 3][k], nblog);
-//                                     BLliberado = nblog;
-// #endif
-//                                     liberados++;
-//                                     bloques_punteros[nivel_punteros - 3][k] = 0;
-//                                     bloque_modificado[nivel_punteros - 3] = 1;
-//                                 }
-//                                 k++;
-//                             }
-//                             if (memcmp(bloques_punteros[nivel_punteros - 3], bufAux_punteros, BLOCKSIZE) == 0) {
-//                                 liberar_bloque(bloques_punteros[nivel_punteros - 2][j]);//de punteros
-// #if DEBUG
-//                                 fprintf(stderr, "[liberar_bloques_inodo()→ liberado BF %d de punteros_nivel%d correspondiente al BL %d]\n", bloques_punteros[nivel_punteros - 2][j], nivel_punteros - 2, BLliberado);
-// #endif
-//                                 liberados++;
-//                                 bloques_punteros[nivel_punteros - 2][j] = 0;
-//                                 bloque_modificado[nivel_punteros - 2] = 1;
-//                             } else { // escribimos en el dispositivo el bloque de punteros, si ha sido modificado
-//                                 if (bloque_modificado[nivel_punteros - 3]) {
-//                                     if (bwrite(bloques_punteros[nivel_punteros - 2][j], bloques_punteros[nivel_punteros - 3]) < 0) return -1;
-//                                     contador_bwrites++;
-//                                 }
-//                             }
-//                         }
-//                         j++;
-//                     }
-//                     if (memcmp(bloques_punteros[nivel_punteros - 2], bufAux_punteros, BLOCKSIZE) == 0) {
-//                         liberar_bloque(bloques_punteros[nivel_punteros - 1][i]);//de punteros
-// #if DEBUG
-//                         fprintf(stderr, "[liberar_bloques_inodo()→ liberado BF %d de punteros_nivel%d correspondiente al BL %d]\n", bloques_punteros[nivel_punteros - 1][i], nivel_punteros - 1, BLliberado);
-// #endif
-//                         liberados++;
-//                         bloques_punteros[nivel_punteros - 1][i] = 0;
-//                         bloque_modificado[nivel_punteros - 1] = 1;
-//                     } else { // escribimos en el dispositivo el bloque de punteros, si ha sido modificado
-//                         if (bloque_modificado[nivel_punteros - 2]) {
-//                             if (bwrite(bloques_punteros[nivel_punteros - 1][i], bloques_punteros[nivel_punteros - 2]) < 0) return -1;
-//                             contador_bwrites++;
-//                         }
-//                     }
-//                 }
-//                 i++;
-//             }
-//             if (memcmp(bloques_punteros[nivel_punteros - 1], bufAux_punteros, BLOCKSIZE) == 0) {
-//                 liberar_bloque(inodo->punterosIndirectos[2]);//de punteros
-// #if DEBUG
-//                 fprintf(stderr, "[liberar_bloques_inodo()→ liberado BF %d de punteros_nivel%d correspondiente al BL %d]\n", inodo->punterosIndirectos[2], nivel_punteros, BLliberado);
-// #endif
-//                 liberados++;
-//                 inodo->punterosIndirectos[2] = 0;
-//             } else { // escribimos en el dispositivo el bloque de punteros, si ha sido modificado
-//                 if (bloque_modificado[nivel_punteros - 1]) {
-//                     if (bwrite(inodo->punterosIndirectos[2], bloques_punteros[nivel_punteros - 1]) < 0) return -1;
-//                     contador_bwrites++;
-//                 }
-//             }
-//         }
-//     }
-
-// #if DEBUG
-//     fprintf(stderr, "[liberar_bloques_inodo()→ total bloques liberados: %d, total_breads: %d, total_bwrites:%d]\n", liberados, contador_breads, contador_bwrites);
-// #endif
-//     return liberados;
-// }
