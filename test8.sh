@@ -56,15 +56,15 @@ echo -e "\x1B[38;2;17;245;120m$ ./mi_mkdir disco 6 /dir1/dir11/fic112   #permiso
 ./mi_mkdir disco 6 /dir1/dir11/fic112
 echo
 echo -e "\x1B[38;2;17;245;120m################################################################################\x1b[0m"
-echo -e "\x1B[38;2;17;245;120m$ ./mi_ls disco /\x1b[0m"
-./mi_ls disco /
+echo -e "\x1B[38;2;17;245;120m$ ./mi_ls -l disco /\x1b[0m"
+./mi_ls -l disco /
 echo
 echo -e "\x1B[38;2;17;245;120m################################################################################\x1b[0m"
 echo -e "\x1B[38;2;17;245;120m$ ./mi_stat disco /dir1/\x1b[0m"
 ./mi_stat disco /dir1/
 echo
-echo -e "\x1B[38;2;17;245;120m$ ./mi_ls disco /dir1/ \x1b[0m"
-./mi_ls disco /dir1/
+echo -e "\x1B[38;2;17;245;120m$ ./mi_ls -l disco /dir1/ \x1b[0m"
+./mi_ls -l disco /dir1/
 echo
 echo -e "\x1B[38;2;17;245;120m################################################################################\x1b[0m"
 echo -e "\x1B[38;2;17;245;120m$ ./mi_stat disco /dir1/dir11/\x1b[0m"
@@ -73,12 +73,12 @@ echo
 echo -e "\x1B[38;2;17;245;120m$ ./mi_ls disco /dir1/dir11/ #formato simple\x1b[0m"
 ./mi_ls disco /dir1/dir11/ #formato simple
 echo
-echo -e "\x1B[38;2;17;245;120m$ ./mi_ls disco /dir1/dir11/\x1b[0m"
-./mi_ls disco /dir1/dir11/
+echo -e "\x1B[38;2;17;245;120m$ ./mi_ls -l disco /dir1/dir11/\x1b[0m"
+./mi_ls -l disco /dir1/dir11/
 echo
 echo -e "\x1B[38;2;17;245;120m################################################################################\x1b[0m"
-echo -e "\x1B[38;2;17;245;120m./mi_ls disco /dir1/dir12/ #Error: No existe el archivo o el directorio.\x1b[0m"
-./mi_ls disco /dir1/dir12/
+echo -e "\x1B[38;2;17;245;120m./mi_ls -l disco /dir1/dir12/ #Error: No existe el archivo o el directorio.\x1b[0m"
+./mi_ls -l disco /dir1/dir12/
 echo
 echo -e "\x1B[38;2;17;245;120m################################################################################\x1b[0m"
 echo -e "\x1B[38;2;17;245;120m$ ./mi_mkdir disco 6 /dir1/dir11/fic111 #Error: El archivo ya existe.\x1b[0m"
@@ -97,5 +97,5 @@ echo -e "\x1B[38;2;17;245;120m$ ./mi_mkdir disco 9 /dir2/ #Error: modo inválido
 ./mi_mkdir disco 9 /dir2/
 echo
 echo -e "\x1B[38;2;17;245;120m################################################################################\x1b[0m"
-echo -e "\x1B[38;2;17;245;120m$ ./mi_ls disco /dir1/dir11/fic111 #Si está implementado para ficheros\x1b[0m"
-./mi_ls disco /dir1/dir11/fic111 #Si está implementado para ficheros
+echo -e "\x1B[38;2;17;245;120m$ ./mi_ls -l disco /dir1/dir11/fic111 #Si está implementado para ficheros\x1b[0m"
+./mi_ls -l disco /dir1/dir11/fic111 #Si está implementado para ficheros

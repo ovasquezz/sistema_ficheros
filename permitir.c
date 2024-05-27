@@ -31,7 +31,7 @@ int main(int argc, char **argv){
             return FALLO;
         }
         else{
-            return 0;
+            return EXITO;
         }
     }
 }

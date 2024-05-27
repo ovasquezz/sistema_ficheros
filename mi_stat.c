@@ -9,7 +9,7 @@ int main(int argc, char** argv) {
 
     if (argc < 3) {
         fprintf(stderr, RED "Error al introducir el comando\n" RESET);
-        return -1;
+        return FALLO;
     }
 
     bmount(argv[1]);
@@ -29,5 +29,5 @@ int main(int argc, char** argv) {
     }
 
     bumount(argv[1]);
-    return 0;
+    return EXITO;
 }

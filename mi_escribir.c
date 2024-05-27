@@ -40,5 +40,5 @@ int main(int argc, char** argv) {
         fprintf(stderr, RED "Error en mi_escribir.c --> %d: %s\n" RESET, errno, strerror(errno));
         return FALLO;
     }
-    return 0;
+    return EXITO;
 }

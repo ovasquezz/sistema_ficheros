@@ -162,7 +162,7 @@ int escribir_bit(unsigned int nbloque, unsigned int bit) {
         fprintf(stderr, "Error en la escritura del bit en el bloque\n");
         return FALLO;
     }
-    return 0;
+    return EXITO;
 }
 
 

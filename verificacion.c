@@ -43,7 +43,7 @@ int main(int argc, char** argv) {
     strcpy(informe, directorio);
     strcat(informe, "informe.txt");
     if (mi_creat(informe, 6) < 0) {
-        fprintf(stderr, "Error al crear informe.txt\n");
+        fprintf(stderr, RED "Error al crear informe.txt\n" RESET);
         return FALLO;
     }
 
@@ -129,7 +129,7 @@ int main(int argc, char** argv) {
         sprintf(buffer + strlen(buffer), "%s\t%i\t%i\t%s\n\n", "Mayor posicion   ", info.MayorPosicion.nEscritura, info.MayorPosicion.nRegistro, stringFecha);
 
         if ((n_escritos += mi_write(informe, buffer, n_escritos, strlen(buffer))) < 0) {
-            printf(RED "Error escritura fichero: '%s'\n" RESET, informe);
+            printf(RED "Error escritura fichero: '%s' en verificacion.c\n" RESET, informe);
             bumount();
             return FALLO;
         }

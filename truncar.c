@@ -5,6 +5,7 @@
 */
 
 #include "ficheros.h"
+#define DEBUG6 0
 
 int main(int argc, char** argv) {
     if (argv[1] == NULL || argv[2] == NULL || argv[3] == NULL) {
@@ -19,19 +20,6 @@ int main(int argc, char** argv) {
 
     struct STAT stat;
     mi_stat_f(ninodo, &stat);
-    printf(YELLOW);
-    printf("DATOS INODO INICIAL:\n");
-
-    printf("tipo %d\n", stat.tipo);
-    printf("permisos %d\n", stat.permisos);
-    printf("atime %ld\n", stat.atime);
-    printf("ctime %ld\n", stat.ctime);
-    printf("mtime %ld\n", stat.mtime);
-    printf("nlinks %d\n", stat.nlinks);
-    printf("tamEnBytesLog %d\n", stat.tamEnBytesLog);
-    printf("numBloquesOcupados %d\n", stat.numBloquesOcupados);
-    printf(GRAY);
-
     if (nbytes == 0) {
         liberar_inodo(ninodo);
     } else {
@@ -39,9 +27,8 @@ int main(int argc, char** argv) {
     }
 
     mi_stat_f(ninodo, &stat);
-    printf(BLUE);
-    printf("DATOS INODO FINAL:\n");
 
+#if DEBUG6
     printf("tipo %d\n", stat.tipo);
     printf("permisos %d\n", stat.permisos);
     printf("atime %ld\n", stat.atime);
@@ -50,7 +37,7 @@ int main(int argc, char** argv) {
     printf("nlinks %d\n", stat.nlinks);
     printf("tamEnBytesLog %d\n", stat.tamEnBytesLog);
     printf("numBloquesOcupados %d\n", stat.numBloquesOcupados);
-    printf(GRAY);
+#endif
 
     bumount();
     return 0;

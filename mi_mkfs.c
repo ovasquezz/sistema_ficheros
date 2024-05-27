@@ -8,7 +8,7 @@
 int main(int argc, char** argv) {
     //Comprobamos sintaxis
     if (argc < 3) {
-        fprintf(stderr, "Error al introducir el comando\n");
+        fprintf(stderr, RED "Error al introducir el comando\n" RESET);
         return FALLO;
     }
     // Montamos dispositivo usando el nombre introducido en consola
@@ -20,6 +20,7 @@ int main(int argc, char** argv) {
     // Convertimos la cantidad de nbloques pasada por consola a un entero.
     unsigned int nbloques = atoi(argv[2]);
     unsigned int ninodos = nbloques/4;
+
     // bucle para escribir nbloques veces un bloque libre
     for (int i = 0; i < nbloques; i++) {
         bwrite(i, libre);
@@ -32,5 +33,5 @@ int main(int argc, char** argv) {
     reservar_inodo('d', 7);
 
     bumount(argv[1]);
-    return 0;
+    return EXITO;
 }

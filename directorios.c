@@ -13,11 +13,11 @@ static struct UltimaEntrada UltimaEntradaLectura;
 /**
  * Funcion para obtener el camino del directorio o fichero
 */
-int extraer_camino(const char *camino, char *inicial, char *final, char *tipo) {
-    const char *aux;
+int extraer_camino(const char* camino, char* inicial, char* final, char* tipo) {
+    const char* aux;
 
-    if (camino[0] != '/'){
-        return -1;
+    if (camino[0] != '/') {
+        return FALLO;
     }
 
     camino++;
@@ -61,7 +61,7 @@ int buscar_entrada(const char* camino_parcial, unsigned int* p_inodo_dir, unsign
     if (!strcmp(camino_parcial, "/")) {
         *p_inodo = SB.posInodoRaiz;
         *p_entrada = 0;
-        return 0;
+        return EXITO;
     }
 
     //Obtenemos camino
@@ -150,12 +150,12 @@ int buscar_entrada(const char* camino_parcial, unsigned int* p_inodo_dir, unsign
         }
         *p_inodo = entrada.ninodo;
         *p_entrada = num_entrada_inodo;
-        return 0;
+        return EXITO;
     } else {
         *p_inodo_dir = entrada.ninodo;
         return buscar_entrada(final, p_inodo_dir, p_inodo, p_entrada, reservar, permisos);
     }
-    return 0;
+    return EXITO;
 }
 
 /**
@@ -201,92 +201,90 @@ int mi_creat(const char* camino, unsigned char permisos) {
 
 /**
  * Funcion para poner el contenido del directorio en un buffer de memoria y devuelve el número de entradas.
+ * Mejora añadida: flag para determinar si imprimir version extendida o simple
+ * Mejora no añadida: tipo de archivo
 */
-int mi_dir(const char* camino, char* buffer) {
-
+int mi_dir(const char* camino, char* buffer, char flag) {
     struct inodo inodo;
-    unsigned int p_inodo_dir = 0, p_inodo = 0, p_entrada = 0, cant_entradas_inodo;
+    unsigned int p_entrada = 0;
+    unsigned int p_inodo_dir = 0;
+    unsigned int p_inodo = 0;
+    unsigned int cant_entradas_inodo;
     int error;
-    char tamBytes[16], tipo[2];
+    char tmp[30];
+    char tipo[2];
+    char tamBytes[16];
 
     if ((error = buscar_entrada(camino, &p_inodo_dir, &p_inodo, &p_entrada, 0, 4)) < 0) {
         return error;
     }
 
     if (leer_inodo(p_inodo, &inodo) == -1) {
-        return -1;
+        return FALLO;
     }
 
     if (inodo.tipo != 'd') {
-        return -1;
+        return FALLO;
     }
 
     if ((inodo.permisos & 4) != 4) {
-        return -1;
+        return FALLO;
     }
 
     cant_entradas_inodo = inodo.tamEnBytesLog / sizeof(struct entrada);
     struct entrada buffer_entradas[cant_entradas_inodo];
 
-    //Lectura de la entrada
     if (mi_read_f(p_inodo, &buffer_entradas, 0, sizeof(struct entrada) * cant_entradas_inodo) == -1) {
-        return -1;
+        return FALLO;
     }
 
     strcpy(buffer, "");
 
     for (int i = 0; i < cant_entradas_inodo; i++) {
-
-        //Lectura inodo
         if (leer_inodo(buffer_entradas[i].ninodo, &inodo) == -1) {
-            return -1;
+            return FALLO;
         }
 
-        if (inodo.tipo == 'd') {
-            strcat(buffer, GREEN);
-        } else {
-            strcat(buffer, CYAN);
+        if (flag) { //version extendida
+            sprintf(tipo, "%c", inodo.tipo);
+            strcat(buffer, tipo);
+            strcat(buffer, "\t");
+
+            if (inodo.permisos & 4) strcat(buffer, "r"); else strcat(buffer, "-");
+            if (inodo.permisos & 2) strcat(buffer, "w"); else strcat(buffer, "-");
+            if (inodo.permisos & 1) strcat(buffer, "x"); else strcat(buffer, "-");
+
+            strcat(buffer, "\t");
+
+            struct tm* tm; //ver info: struct tm
+            tm = localtime(&inodo.mtime);
+            sprintf(tmp, "%d-%02d-%02d %02d:%02d:%02d", tm->tm_year + 1900, tm->tm_mon + 1, tm->tm_mday, tm->tm_hour, tm->tm_min, tm->tm_sec);
+            strcat(buffer, tmp);
+            sprintf(tamBytes, "\t%d", inodo.tamEnBytesLog);
+            strcat(buffer, tamBytes);
+            strcat(buffer, "\t");
+
+            if (inodo.tipo == 'd') {
+                strcat(buffer, GREEN); // si es directorio: color verde
+            } else {
+                strcat(buffer, CYAN); // si es fichero: color cyan
+            }
+
+            strcat(buffer, buffer_entradas[i].nombre);
+            strcat(buffer, RESET);
+            strcat(buffer, "\n");
+        } else { //version simple
+            if (inodo.tipo == 'd') {
+                strcat(buffer, GREEN); // si es directorio: color verde
+            } else {
+                strcat(buffer, CYAN); // si es fichero: color cyan
+            }
+
+            strcat(buffer, buffer_entradas[i].nombre);
+            strcat(buffer, RESET);
+            strcat(buffer, "\t");
         }
-
-        //Para cada entrada concatenamos su nombre al buffer e incorporamos la información del inodo
-        sprintf(tipo, "%c", inodo.tipo);
-        strcat(buffer, tipo);
-        strcat(buffer, "\t\t");
-
-        if ((inodo.permisos & 4) == 4) {
-            strcat(buffer, "r");
-        } else {
-            strcat(buffer, "-");
-        }
-
-        if ((inodo.permisos & 2) == 2) {
-            strcat(buffer, "w");
-        } else {
-            strcat(buffer, "-");
-        }
-
-        if ((inodo.permisos & 1) == 1) {
-            strcat(buffer, "x");
-        } else {
-            strcat(buffer, "-");
-        }
-
-        strcat(buffer, "\t");
-
-        struct tm* ts;
-        char mtime[80];
-        ts = localtime(&inodo.mtime);
-        strftime(mtime, sizeof(mtime), "%a %Y-%m-%d %H:%M:%S", ts);
-        strcat(buffer, mtime);
-        sprintf(tamBytes, "\t\t%d", inodo.tamEnBytesLog);
-        strcat(buffer, tamBytes);
-        strcat(buffer, "\t\t");
-        strcat(buffer, buffer_entradas[i].nombre);
-        strcat(buffer, RESET);
-        strcat(buffer, "\n");
     }
-
-    //Devolvemos el número de entradas
     return cant_entradas_inodo;
 }
 

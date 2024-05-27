@@ -7,10 +7,11 @@
 # Entrega 2
 No hemos implementado las siguientes funciones opcionales:
     - mi_touch.c
-    - mi_ls con la opcion -l
+    - mi_ls para ficheros
     - mi_rmdir
     - mi_rm_r
 Mejoras que sí hemos implementado:
+    - mi_ls con la opcion -l (extendida o simple)
     - colores en mi_ls
     - caché mejorada guardando el camino de la última entrada buscada
 

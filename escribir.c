@@ -11,7 +11,7 @@
 int main(int argc, char** argv) {
     if (argc != 4) {
         printf("Sintaxis: escribir <nombre_dispositivo> <\"$(cat fichero)\"> <diferentes_inodos>\n");
-        return -1;
+        return FALLO;
     }
     void* nombre_fichero = argv[1];
     char* string = argv[2];
@@ -51,5 +51,5 @@ int main(int argc, char** argv) {
         fprintf(stderr, "Error en escribir.c --> %d: %s\n", errno, strerror(errno));
         return FALLO;
     }
-    return 0;
+    return EXITO;
 }

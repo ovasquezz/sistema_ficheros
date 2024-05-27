@@ -70,5 +70,5 @@ int main(int argc, char** argv) {
 #endif
 
   bumount();
-  return 0;
+  return EXITO;
 }

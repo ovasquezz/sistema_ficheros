@@ -9,7 +9,7 @@ int main(int argc, char** argv) {
 
     if (argc < 4) {
         fprintf(stderr, RED "Sintxis incorrecta: ./mi_chmod <nombre_dispositivo> <permisos> </ruta>\n" RESET);
-        return -1;
+        return FALLO;
     }
 
     bmount(argv[1]);
@@ -22,5 +22,5 @@ int main(int argc, char** argv) {
     }
 
     bumount(argv[1]);
-    return 0;
+    return EXITO;
 }
