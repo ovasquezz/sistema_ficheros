@@ -10,46 +10,48 @@
  */
 int main(int argc, char** argv) {
     if (argc != 4) {
-        printf("Sintaxis: escribir <nombre_dispositivo> <\"$(cat fichero)\"> <diferentes_inodos>\n");
+        printf("Sintaxis: ./escribir <nombre_dispositivo> <\"$(cat fichero)\"> <diferentes_inodos>\n");
         return FALLO;
     }
-    void* nombre_fichero = argv[1];
-    char* string = argv[2];
-    int reserva_inodo = atoi(argv[3]); //offset
-    int longitud = strlen(string);
-    char buffer[longitud];
-    int OFFSETS[5] = { 9000,209000,30725000,409605000,480000000 };
-    strcpy(buffer, string);
+
     struct STAT stat;
-    if (bmount(nombre_fichero) == -1) {
+    int arr_offsets[5] = { 9000, 209000, 30725000, 409605000, 480000000 };
+    char* disp = argv[1];
+    char* string_fichero = argv[2];
+    int diferentes_inodos = atoi(argv[3]);
+    int longitud = strlen(string_fichero);
+    char buffer[longitud];
+
+    strcpy(buffer, string_fichero);
+
+    if (bmount(disp) == -1) {
         return FALLO;
     }
-    int n_inodo = reservar_inodo('f', 6);
-    printf("Nº inodo reservado: %d\noffset: %d\n", n_inodo, OFFSETS[0]);
-    int n_escritos = mi_write_f(n_inodo, buffer, OFFSETS[0], longitud);
+
+    int ninodo = reservar_inodo('f', 6);
+    printf("Nº inodo reservado: %d\noffset: %d\n", ninodo, arr_offsets[0]);
+    int n_escritos = mi_write_f(ninodo, buffer, arr_offsets[0], longitud);
     memset(buffer, 0, longitud);
-    mi_stat_f(n_inodo, &stat);
+    mi_stat_f(ninodo, &stat);
 
     printf("Bytes escritos: %d\n", n_escritos);
     printf("Tamaño en bytes lógicos: %d\n", stat.tamEnBytesLog);
     printf("N. de bloques ocupados: %d\n\n", stat.numBloquesOcupados);
 
     for (int i = 1; i < 5; ++i) {
-        if (reserva_inodo != 0) {
-            n_inodo = reservar_inodo('f', 6);
+        if (diferentes_inodos != 0) {
+            ninodo = reservar_inodo('f', 6);
         }
-        printf("Nº inodo reservado: %d\noffset: %d\n", n_inodo, OFFSETS[i]);
-        int bEscritos = mi_write_f(n_inodo, string, OFFSETS[i], longitud);
+        printf("Nº inodo reservado: %d\noffset: %d\n", ninodo, arr_offsets[i]);
+        int bEscritos = mi_write_f(ninodo, string_fichero, arr_offsets[i], longitud);
         memset(buffer, 0, longitud);
-        mi_stat_f(n_inodo, &stat);
+        mi_stat_f(ninodo, &stat);
+
         printf("Bytes escritos: %d\n", bEscritos);
         printf("Tamaño en bytes lógicos: %d\n", stat.tamEnBytesLog);
         printf("N. de bloques ocupados: %d\n\n", stat.numBloquesOcupados);
     }
 
-    if (bumount() == -1) {
-        fprintf(stderr, "Error en escribir.c --> %d: %s\n", errno, strerror(errno));
-        return FALLO;
-    }
+    bumount();
     return EXITO;
 }

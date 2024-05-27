@@ -10,6 +10,7 @@ struct entrada* entrada;
 static struct UltimaEntrada UltimaEntradaEscritura;
 static struct UltimaEntrada UltimaEntradaLectura;
 
+
 /**
  * Funcion para obtener el camino del directorio o fichero
 */
@@ -28,7 +29,6 @@ int extraer_camino(const char* camino, char* inicial, char* final, char* tipo) {
         strncpy(inicial, camino, aux - camino);
         inicial[aux - camino] = 0;
         *tipo = 'd';
-
     } else {
         strcpy(inicial, camino);
         strcpy(final, "");
@@ -37,6 +37,7 @@ int extraer_camino(const char* camino, char* inicial, char* final, char* tipo) {
 
     return EXIT_SUCCESS;
 }
+
 
 /**
  * Funcion para buscar una entrada entre las entradas del inodo correspondiente a su directorio padre
@@ -51,15 +52,13 @@ int buscar_entrada(const char* camino_parcial, unsigned int* p_inodo_dir, unsign
     int cant_entradas_inodo;
     int num_entrada_inodo;
 
-    // Leer SB
     if (bread(posSB, &SB) < 0) {
         fprintf(stderr, "Error en la lectura del superbloque\n");
         return FALLO;
     }
 
-    // Si es raiz
-    if (!strcmp(camino_parcial, "/")) {
-        *p_inodo = SB.posInodoRaiz;
+    if (!strcmp(camino_parcial, "/")) { //camino_parcial es “/”
+        *p_inodo = SB.posInodoRaiz; //nuestra raiz siempre estará asociada al inodo 0
         *p_entrada = 0;
         return EXITO;
     }
@@ -68,11 +67,12 @@ int buscar_entrada(const char* camino_parcial, unsigned int* p_inodo_dir, unsign
     if (extraer_camino(camino_parcial, inicial, final, &tipo) == -1) {
         return ERROR_CAMINO_INCORRECTO;
     }
+
 #if DEBUG7
     printf("[buscar_entrada()->inicial: %s, final: %s, reservar: %d]\n", inicial, final, reservar);
 #endif
 
-    // Buscar entrada con nombre inicial
+    //buscamos la entrada cuyo nombre se encuentra en inicial
     leer_inodo(*p_inodo_dir, &inodo_dir);
     if ((inodo_dir.permisos & 4) != 4) {
         return ERROR_PERMISO_LECTURA;
@@ -304,6 +304,7 @@ int mi_chmod(const char* camino, unsigned char permisos) {
         mostrar_error_buscar_entrada(error);
         return FALLO;
     }
+    return EXITO;
 }
 
 
@@ -311,13 +312,11 @@ int mi_chmod(const char* camino, unsigned char permisos) {
  * Funcion que muestra la información acerca del inodo de un fichero o directorio
 */
 int mi_stat(const char* camino, struct STAT* p_stat) {
-
     unsigned int p_inodo_dir = 0;
     unsigned int p_inodo = 0;
     unsigned int p_entrada = 0;
     int reservar = 0;
     int error;
-
 
     if ((error = buscar_entrada(camino, &p_inodo_dir, &p_inodo, &p_entrada, reservar, 4)) < 0) {
         mostrar_error_buscar_entrada(error);
@@ -400,7 +399,6 @@ int mi_link(const char* camino1, const char* camino2) {
                     perror("Error en mi_read_f en mi_link");
                     return FALLO;
                 }
-
                 entrada.ninodo = p_inodo_source;
 
                 if (mi_write_f(p_inodo_dir, &entrada, p_entrada * sizeof(struct entrada), sizeof(struct entrada)) < 0) {
@@ -439,7 +437,9 @@ int mi_unlink(const char* camino) {
     unsigned int p_inodo = 0;
     unsigned int p_entrada = 0, cant_entradas_inodo;
     struct inodo inodo;
+    struct entrada borrada, aux;
     int error = buscar_entrada(camino, &p_inodo_dir, &p_inodo, &p_entrada, 0, 4);
+
     if (error >= 0) {
         leer_inodo(p_inodo, &inodo);
         if (inodo.tamEnBytesLog > 0 && inodo.tipo == 'd') {
@@ -447,29 +447,33 @@ int mi_unlink(const char* camino) {
             mi_signalSem();
             return FALLO;
         }
+
         leer_inodo(p_inodo_dir, &inodo);
         cant_entradas_inodo = inodo.tamEnBytesLog / sizeof(struct entrada);
-        if (p_entrada != cant_entradas_inodo - 1) {
-            struct entrada borrada, aux;
+        if (p_entrada != cant_entradas_inodo - 1) {// Si la entrada a eliminar no es la última
             int size = sizeof(struct entrada);
             int n_entrada = size * p_entrada;
-            // leemos la entrada a borrar en memoria
+            // Leer la última y escribirla en la posición de la entrada que queremos eliminar
             mi_read_f(p_inodo_dir, &borrada, n_entrada, size);
-            // Leemos la ultima entrada y la colocamos en la psoicion de la entrada a eliminar
+            // Leemos el inodo asociado a la entrada eliminada para decrementar el nº de enlaces.
             mi_read_f(p_inodo_dir, &aux, (cant_entradas_inodo - 1) * size, size);
             mi_write_f(p_inodo_dir, &aux, n_entrada, size);
         }
 
-        mi_truncar_f(p_inodo_dir, inodo.tamEnBytesLog - sizeof(struct entrada));
+        mi_truncar_f(p_inodo_dir, inodo.tamEnBytesLog - sizeof(struct entrada)); // Si la entrada a eliminar es la última
         leer_inodo(p_inodo, &inodo);
         inodo.nlinks = inodo.nlinks - 1;
+
         if (inodo.nlinks > 0) {
             inodo.ctime = time(NULL);
             escribir_inodo(p_inodo, &inodo);
-        } else
+        } else { //Si no quedan enlaces
             liberar_inodo(p_inodo);
+        }
+
         mi_signalSem();
         return EXITO;
+
     } else {
         mostrar_error_buscar_entrada(error);
         mi_signalSem();

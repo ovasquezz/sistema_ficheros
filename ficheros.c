@@ -60,11 +60,11 @@ int mi_write_f(unsigned int ninodo, const void* buf_original, unsigned int offse
             return FALLO;
         }
         //Bloques intermedios
-        for (int i = primerBL + 1;i < ultimoBL;i++) {
+        for (int bl = primerBL + 1;bl < ultimoBL;bl++) {
             mi_waitSem();
-            nbfisico = traducir_bloque_inodo(ninodo, &inodo, i, 1);
+            nbfisico = traducir_bloque_inodo(ninodo, &inodo, bl, 1);
             mi_signalSem();
-            if (bwrite(nbfisico, buf_original + (BLOCKSIZE - desp1) + (i - primerBL - 1) * BLOCKSIZE) == -1) {
+            if (bwrite(nbfisico, buf_original + (BLOCKSIZE - desp1) + (bl - primerBL - 1) * BLOCKSIZE) == -1) {
                 return FALLO;
             }
         }
@@ -84,7 +84,8 @@ int mi_write_f(unsigned int ninodo, const void* buf_original, unsigned int offse
             return FALLO;
         }
     }
-    //Actualizamos el inodo
+
+    //Guardar inodo
     mi_waitSem();
     if (leer_inodo(ninodo, &inodo) == -1) {
         mi_signalSem();
@@ -132,11 +133,10 @@ int mi_read_f(unsigned int ninodo, void* buf_original, unsigned int offset, unsi
     int ultimoBL = (offset + nbytes - 1) / BLOCKSIZE;
     int desp1 = offset % BLOCKSIZE;
     int desp2 = (offset + nbytes - 1) % BLOCKSIZE;
-    int reservar = 0;
 
     //Primer y último bloque coinciden
     if (primerBL == ultimoBL) {
-        bl_fisico = traducir_bloque_inodo(ninodo, &inodo, primerBL, reservar);
+        bl_fisico = traducir_bloque_inodo(ninodo, &inodo, primerBL, 0);
         if (bl_fisico != -1) {
             if (bread(bl_fisico, buf_bloque) == -1) {
                 return FALLO;
@@ -147,7 +147,7 @@ int mi_read_f(unsigned int ninodo, void* buf_original, unsigned int offset, unsi
         leidos = nbytes;
     } else {
         //Primer bloque lógico
-        bl_fisico = traducir_bloque_inodo(ninodo, &inodo, primerBL, reservar);
+        bl_fisico = traducir_bloque_inodo(ninodo, &inodo, primerBL, 0);
         if (bl_fisico != -1) {
             if (bread(bl_fisico, buf_bloque) == -1) {
                 return FALLO;
@@ -157,19 +157,19 @@ int mi_read_f(unsigned int ninodo, void* buf_original, unsigned int offset, unsi
         leidos = BLOCKSIZE - desp1;
 
         //Segundo bloque lógico
-        for (int i = primerBL + 1;i < ultimoBL;i++) {
-            bl_fisico = traducir_bloque_inodo(ninodo, &inodo, i, 0);
+        for (int bl = primerBL + 1;bl < ultimoBL;bl++) {
+            bl_fisico = traducir_bloque_inodo(ninodo, &inodo, bl, 0);
             if (bl_fisico != -1) {
                 if (bread(bl_fisico, buf_bloque) == -1) {
                     return FALLO;
                 }
-                memcpy(buf_original + (BLOCKSIZE - desp1) + (i - primerBL - 1) * BLOCKSIZE, buf_bloque, BLOCKSIZE);
+                memcpy(buf_original + (BLOCKSIZE - desp1) + (bl - primerBL - 1) * BLOCKSIZE, buf_bloque, BLOCKSIZE);
             }
             leidos = leidos + BLOCKSIZE;
         }
 
         //Tercer bloque lógico
-        bl_fisico = traducir_bloque_inodo(ninodo, &inodo, ultimoBL, reservar);
+        bl_fisico = traducir_bloque_inodo(ninodo, &inodo, ultimoBL, 0);
         if (bl_fisico != -1) {
             if (bread(bl_fisico, buf_bloque) == -1) {
                 return FALLO;
@@ -179,6 +179,7 @@ int mi_read_f(unsigned int ninodo, void* buf_original, unsigned int offset, unsi
         leidos = leidos + desp2 + 1;
     }
 
+    //Guardar inodo
     mi_waitSem();
     if (leer_inodo(ninodo, &inodo) < 0) {
         mi_signalSem();
@@ -247,31 +248,35 @@ int mi_truncar_f(unsigned int ninodo, unsigned int nbytes) {
     struct inodo inodo;
     unsigned int primerBL;
     int liberados;
+
     if (leer_inodo(ninodo, &inodo) == -1) {
-        perror("Error en mi_truncar_f, leer inodo\n");
+        perror("Error al leer inodo en mi_truncar_f\n");
         return FALLO;
     }
     if ((inodo.permisos & 2) != 2) {
-        perror("Error en mi_truncar_f, faltan permisos de escritura\n");
+        perror("Error, faltan permisos de escritura en mi_truncar_f\n");
         return FALLO;
     }
     if (inodo.tamEnBytesLog <= nbytes) {
-        perror("Error en mi_truncar_f, EOF\n");
+        perror("EOF en mi_truncar_f\n");
         return FALLO;
     }
-    // Liberar el primer bloque lógico
+
+    // Calcular primerBL
     if (nbytes % BLOCKSIZE == 0) {
         primerBL = nbytes / BLOCKSIZE;
     } else {
         primerBL = nbytes / BLOCKSIZE + 1;
     }
+
     liberados = liberar_bloques_inodo(primerBL, &inodo);
     inodo.mtime = time(NULL);
     inodo.ctime = time(NULL);
     inodo.tamEnBytesLog = nbytes;
     inodo.numBloquesOcupados -= liberados;
+
     if (escribir_inodo(ninodo, &inodo) == -1) {
-        perror("Error en mi_truncar_f, escribir_inodo\n");
+        perror("Error al escribir inodo en mi_truncar_f\n");
         return FALLO;
     }
     return liberados;

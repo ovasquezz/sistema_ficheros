@@ -5,33 +5,35 @@
 */
 
 #include "ficheros.h"
-//funcion para validar la sintaxis, montar el dispositivo, llamar mi_chod_f y desmontar dispositivo
-int main(int argc, char **argv){
-    if(argc !=4){
-        fprintf(stderr, "Sintaxis correcta: ./permitir <nombre_dispositivo> <ninodo> <permisos>\n");
+
+/**
+ * Funcion para validar la sintaxis, montar el dispositivo, llamar mi_chod_f y desmontar dispositivo
+ */
+int main(int argc, char** argv) {
+    char* disp;
+    if (argc != 4) {
+        perror("Sintaxis: permitir <nombre_dispositivo> <ninodo> <permisos>\n");
         return FALLO;
-    }
-    else{
-        //montar dispositivo
-        if(bmount(argv[1])==-1){
+    } else {
+        disp = argv[1];
+        unsigned int ninodo = atoi(argv[2]);
+        unsigned int permisos = atoi(argv[3]);
+
+        if (bmount(disp) == -1) {
             perror("Error al montar el dispositivo");
             return FALLO;
         }
-        // llamamos a mi_chmod_f
-        unsigned int ninodo=atoi(argv[2]);
-        unsigned int permisos=atoi(argv[3]);
-
-        if(mi_chmod_f(ninodo,permisos) == -1){
+        //LLamada chmod
+        if (mi_chmod_f(ninodo, permisos) == -1) {
             perror("Error en el chmod");
             return FALLO;
         }
-        //desmontar dispotivo
-        if(bumount()==-1){
+
+        if (bumount() == -1) {
             perror("Error al desmontar el dispositivo");
             return FALLO;
         }
-        else{
-            return EXITO;
-        }
+        return EXITO;
+
     }
 }

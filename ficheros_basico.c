@@ -404,7 +404,7 @@ int obtener_indice(unsigned int nblogico, int nivel_punteros) {
             return(nblogico - INDIRECTOS1) % (NPUNTEROS * NPUNTEROS) % NPUNTEROS;
         }
     }
-    return FALLO; // error
+    return FALLO;
 }
 
 
@@ -494,6 +494,7 @@ int traducir_bloque_inodo(unsigned int ninodo, struct inodo* inodo, unsigned int
  * Funcion para liberar un inodo, liberar boques de datos y bloques de índice
 */
 int liberar_inodo(unsigned int ninodo) {
+    struct superbloque SB;
     struct inodo inodo;
     int bloquesL = 0;
     leer_inodo(ninodo, &inodo);
@@ -506,12 +507,11 @@ int liberar_inodo(unsigned int ninodo) {
     inodo.tipo = 'l';
     inodo.tamEnBytesLog = 0;
     inodo.numBloquesOcupados -= bloquesL;
-    if (inodo.numBloquesOcupados) // !=0
-        fprintf(stderr, RED "Faltan por liberar %d bloques del inodo\n" RESET, inodo.numBloquesOcupados);
-    struct superbloque SB;
+
     if (bread(posSB, &SB) == -1) {
         return FALLO;
     }
+
     inodo.punterosDirectos[0] = SB.posPrimerInodoLibre;
     inodo.ctime = time(NULL);
     SB.posPrimerInodoLibre = ninodo;
